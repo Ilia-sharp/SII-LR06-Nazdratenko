@@ -1,0 +1,14 @@
+# Лабораторная работа №6 · Вариант 16
+# Тема варианта: «рабочее место» (office), тип промпта: interior.
+# Промпты на английском — текстовый энкодер CLIP обучен на англоязычных данных.
+# Seed фиксирован (116) для всех промптов прогона — так сравнение промптов честное.
+
+photo of a cozy home office workspace, wooden desk with a laptop and a small plant, warm morning light through the window, scandinavian interior style, soft shadows, 50mm lens, high detail
+
+modern minimalist workplace interior, white desk with a monitor and keyboard, ergonomic chair, large window with a city view, clean lines, bright daylight, architectural photography
+
+small study workspace in a student dorm room, desk with books and a desk lamp, laptop and notebooks, warm evening light, cozy atmosphere, realistic photo, shallow depth of field
+
+creative loft studio workplace, dark wooden desk with dual monitors, exposed brick wall, industrial pendant lamps, plants on shelves, moody lighting, wide-angle interior photo
+
+bright corner workplace near a panoramic window, light oak desk, green plants, ceramic mug with coffee, soft morning haze, airy interior, photorealistic, natural colors

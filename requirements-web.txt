@@ -1,0 +1,6 @@
+# Минимальные зависимости для веб-сервера (Render Free, 512 MB RAM).
+# Без torch: сервер работает в режимах replay/cloud, инференс — не на сервере.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+Pillow>=10.0
+huggingface_hub>=0.34

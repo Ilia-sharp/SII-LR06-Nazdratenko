@@ -1,0 +1,4 @@
+# Зависимости для разработки и CI
+-r requirements-web.txt
+pytest>=8.0
+httpx>=0.27

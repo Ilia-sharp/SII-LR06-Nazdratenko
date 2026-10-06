@@ -1,0 +1,54 @@
+{
+  "run_id": "20261006-1641",
+  "created_at": "2026-10-06T16:41:15",
+  "model_id": "stabilityai/sd-turbo",
+  "model_version": "b261bac6fd2cf515557d5d0707481eafa0485ec2",
+  "steps": 4,
+  "items": [
+    {
+      "file": "img_000.png",
+      "prompt": "photo of a cozy home office workspace, wooden desk with a laptop and a small plant, warm morning light through the window, scandinavian interior style, soft shadows, 50mm lens, high detail",
+      "seed": 116,
+      "elapsed_sec": 18.28,
+      "width": 512,
+      "height": 512,
+      "size_bytes": 435318
+    },
+    {
+      "file": "img_001.png",
+      "prompt": "modern minimalist workplace interior, white desk with a monitor and keyboard, ergonomic chair, large window with a city view, clean lines, bright daylight, architectural photography",
+      "seed": 116,
+      "elapsed_sec": 17.83,
+      "width": 512,
+      "height": 512,
+      "size_bytes": 403943
+    },
+    {
+      "file": "img_002.png",
+      "prompt": "small study workspace in a student dorm room, desk with books and a desk lamp, laptop and notebooks, warm evening light, cozy atmosphere, realistic photo, shallow depth of field",
+      "seed": 116,
+      "elapsed_sec": 17.96,
+      "width": 512,
+      "height": 512,
+      "size_bytes": 492799
+    },
+    {
+      "file": "img_003.png",
+      "prompt": "creative loft studio workplace, dark wooden desk with dual monitors, exposed brick wall, industrial pendant lamps, plants on shelves, moody lighting, wide-angle interior photo",
+      "seed": 116,
+      "elapsed_sec": 17.55,
+      "width": 512,
+      "height": 512,
+      "size_bytes": 537591
+    },
+    {
+      "file": "img_004.png",
+      "prompt": "bright corner workplace near a panoramic window, light oak desk, green plants, ceramic mug with coffee, soft morning haze, airy interior, photorealistic, natural colors",
+      "seed": 116,
+      "elapsed_sec": 17.5,
+      "width": 512,
+      "height": 512,
+      "size_bytes": 399457
+    }
+  ]
+}

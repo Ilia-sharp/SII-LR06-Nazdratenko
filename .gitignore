@@ -1,0 +1,26 @@
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# ── Веса моделей и кэш Hugging Face (НЕ коммитим — они большие) ──
+models/
+*.safetensors
+*.ckpt
+*.bin
+!text_encoder/**
+!unet/**
+!vae/**
+.hf_cache/
+
+# ── Живые генерации из веб-интерфейса (каждая машина своя) ──
+data/live/
+
+# ── Служебное ───────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.env
+*.log

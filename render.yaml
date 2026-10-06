@@ -1,0 +1,17 @@
+# Render Blueprint — деплой одной кнопкой (Create Resources → Blueprint).
+# Тариф Free: 0.1 CPU / 512 MB RAM — локальный инференс невозможен,
+# поэтому сайт работает в режимах replay (повтор прогона) и cloud (демо).
+services:
+  - type: web
+    name: sii-lr06-nazdratenko
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements-web.txt
+    startCommand: uvicorn src.server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: ENABLE_REAL_GEN
+        value: "0"
