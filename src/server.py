@@ -58,8 +58,14 @@ LIVE_DIR = Path(os.environ.get("LIVE_DIR", ROOT / "data" / "live"))
 PROMPTS_FILE = Path(os.environ.get("PROMPTS_FILE", ROOT / "prompts.txt"))
 
 ENABLE_REAL_GEN = os.environ.get("ENABLE_REAL_GEN", "1") == "1"
-CLOUD_TIMEOUT = int(os.environ.get("CLOUD_TIMEOUT", "180"))
-CLOUD_URL = "https://image.pollinations.ai/prompt/{q}?width={w}&height={h}&seed={s}&nologo=true"
+CLOUD_TIMEOUT = int(os.environ.get("CLOUD_TIMEOUT", "90"))
+CLOUD_RETRIES = int(os.environ.get("CLOUD_RETRIES", "2"))
+CLOUD_MODEL = os.environ.get("CLOUD_MODEL", "flux")
+CLOUD_SIZE = int(os.environ.get("CLOUD_SIZE", "1024"))
+CLOUD_URL = (
+    "https://image.pollinations.ai/prompt/{q}"
+    "?width={w}&height={h}&seed={s}&model={m}&nologo=true&enhance=true"
+)
 
 DOC_FILES: dict[str, Path] = {
     "model_card": ROOT / "MODEL_CARD.md",
@@ -72,7 +78,8 @@ SAFE_FILE = re.compile(r"^[A-Za-z0-9._-]+$")
 app = FastAPI(
     title="SII-LR06 · Конвейер диффузии (вариант 16)",
     version="1.0.0",
-    description="Учебный проект: генерация изображений моделью sd-turbo",
+    description="Учебный проект: генерация изображений моделью sd-turbo, "
+                "облачное демо — Flux",
 )
 
 
@@ -249,7 +256,8 @@ def live_image_file(name: str) -> FileResponse:
     path = _safe_join(LIVE_DIR, name)
     if not path.is_file():
         raise HTTPException(status_code=404, detail="файл не найден")
-    return FileResponse(path, media_type="image/png")
+    media = "image/jpeg" if path.suffix.lower() in {".jpg", ".jpeg"} else "image/png"
+    return FileResponse(path, media_type=media)
 
 
 @app.get("/api/docs/{key}")
@@ -416,28 +424,48 @@ def _real_stream(req: GenerateRequest):
 
 
 def _cloud_stream(req: GenerateRequest):
-    """Демо-генерация через публичный API pollinations.ai (Flux)."""
+    """Демо-генерация через публичный API pollinations.ai (Flux, 1024 px)."""
     yield _sse({"type": "meta", "mode": "cloud", "model_id": "flux (pollinations.ai)",
-                "steps": None,
-                "note": "Локальный инференс недоступен — облачный демо-режим"})
+                "steps": None, "width": CLOUD_SIZE, "height": CLOUD_SIZE,
+                "note": "Локальный инференс недоступен — облачный демо-режим Flux"})
     yield _sse({"type": "stage", "stage": "cloud",
-                "message": "Запрос к облачному генератору…"})
+                "message": "Облачная генерация Flux…"})
 
     q = urllib.parse.quote(req.prompt, safe="")
-    url = CLOUD_URL.format(q=q, w=WIDTH, h=HEIGHT, s=req.seed)
+    url = CLOUD_URL.format(q=q, w=CLOUD_SIZE, h=CLOUD_SIZE,
+                           s=req.seed, m=CLOUD_MODEL)
     t0 = time.perf_counter()
-    try:
-        request = urllib.request.Request(url, headers={"User-Agent": "sii-lr06/1.0"})
-        with urllib.request.urlopen(request, timeout=CLOUD_TIMEOUT) as resp:
-            data = resp.read()
-    except Exception as exc:  # noqa: BLE001
+    data, ctype, last_error = b"", "", "нет ответа"
+    for attempt in range(1, CLOUD_RETRIES + 2):
+        try:
+            request = urllib.request.Request(url, headers={
+                "User-Agent": "sii-lr06/1.1 (+https://github.com/Ilia-sharp/SII-LR06-Nazdratenko)",
+                "Accept": "image/*",
+            })
+            with urllib.request.urlopen(request, timeout=CLOUD_TIMEOUT) as resp:
+                ctype = (resp.headers.get("Content-Type") or "").lower()
+                data = resp.read()
+            if ctype.startswith("image/") and len(data) > 5000:
+                break
+            last_error = f"неожиданный ответ ({ctype or 'без типа'}, {len(data)} байт)"
+            data = b""
+        except Exception as exc:  # noqa: BLE001
+            last_error = str(exc)
+            data = b""
+        if attempt <= CLOUD_RETRIES:
+            yield _sse({"type": "stage", "stage": "cloud",
+                        "message": f"Повтор запроса {attempt} из {CLOUD_RETRIES}…"})
+            time.sleep(1.5)
+
+    if not data:
         yield _sse({"type": "error",
-                    "message": f"Облачный генератор недоступен: {exc}"})
+                    "message": f"Облачный генератор не ответил: {last_error}"})
         yield _sse({"type": "end", "count": 0})
         return
 
     LIVE_DIR.mkdir(parents=True, exist_ok=True)
-    fname = f"cloud_{time.strftime('%Y%m%d-%H%M%S')}.png"
+    ext = "jpg" if "jpeg" in ctype or "jpg" in ctype else "png"
+    fname = f"cloud_{time.strftime('%Y%m%d-%H%M%S')}.{ext}"
     (LIVE_DIR / fname).write_bytes(data)
 
     yield _sse({
@@ -445,7 +473,7 @@ def _cloud_stream(req: GenerateRequest):
         "url": f"/api/live-images/{fname}",
         "prompt": req.prompt, "seed": req.seed,
         "elapsed_sec": round(time.perf_counter() - t0, 2),
-        "width": WIDTH, "height": HEIGHT,
+        "width": CLOUD_SIZE, "height": CLOUD_SIZE,
         "size_bytes": len(data),
     })
     yield _sse({"type": "end", "count": 1})

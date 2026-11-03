@@ -3,685 +3,372 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Из шума — рабочее место · ЛР №6 · Наздратенко</title>
-<meta name="description" content="Лабораторная работа №6: конвейер диффузии SD-Turbo. Рабочее место, seed 116, 4 шага. Живая генерация прямо на странице и воспроизводимый манифест.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23FAF6EF'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%23C6532D' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23C6532D'/%3E%3C/svg%3E">
+<title>Рабочее место · ЛР №6 · Наздратенко</title>
+<meta name="description" content="Лабораторная работа №6: генерация изображений рабочего места моделью SD-Turbo. Seed 116, 4 шага, живой прогресс и воспроизводимый манифест.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23F4F2EC'/%3E%3Ccircle cx='32' cy='32' r='13' fill='none' stroke='%23C6532D' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23C6532D'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#FAF6EF; --card:#FFFDF9; --ink:#241E18; --muted:#6E6357;
-  --line:#E9E0D3; --line-soft:#F0E8DC;
-  --accent:#C6532D; --accent-dark:#9E3F21; --accent-soft:#F7E6DC;
-  --sage:#5F7355; --sage-soft:#E8EEE2;
-  --r:26px; --r-sm:15px;
-  --shadow:0 16px 44px rgba(56,40,24,.07);
-  --shadow-lg:0 30px 80px rgba(56,40,24,.15);
+  --bg:#F4F2EC; --panel:#FBFAF7; --stage:#E9E5DC;
+  --ink:#191713; --muted:#797267; --line:#E1DCD1; --line-2:#D3CDC0;
+  --accent:#C6532D; --accent-soft:#F4E3DA;
+  --ok:#4F6B4A;
   --serif:"Playfair Display",Georgia,serif;
   --sans:"Golos Text",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0;color:var(--ink);font:400 17px/1.6 var(--sans);
-  background:
-    radial-gradient(1100px 620px at 78% -8%, #FFEFDF 0%, rgba(255,239,223,0) 62%),
-    radial-gradient(900px 500px at 0% 6%, #F2ECD8 0%, rgba(242,236,216,0) 55%),
-    var(--paper);
-  -webkit-font-smoothing:antialiased;
-}
-::selection{background:var(--accent-soft);color:var(--accent-dark)}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:400 15.5px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--accent)}
+button{font:inherit}
 img{max-width:100%}
-.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
-section{scroll-margin-top:96px}
+a{color:inherit}
 
 /* ── Шапка ─────────────────────────────────────────────────────────────── */
-.topbar{position:sticky;top:0;z-index:50;background:rgba(250,246,239,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(233,224,211,.75)}
-.bar{display:flex;align-items:center;gap:26px;height:72px}
-.logo{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink);font-weight:600;letter-spacing:-.01em}
-.logo svg{width:26px;height:26px;flex:none}
-.nav{display:flex;gap:2px;margin-left:auto}
-.nav a{color:var(--muted);text-decoration:none;font-size:15px;font-weight:500;padding:8px 14px;border-radius:999px;transition:color .18s,background .18s}
-.nav a:hover{color:var(--ink);background:var(--line-soft)}
-.tag{font-size:12.5px;font-weight:600;letter-spacing:.01em;color:var(--accent-dark);background:var(--accent-soft);padding:6px 13px;border-radius:999px;white-space:nowrap}
+.top{display:flex;align-items:center;gap:20px;height:62px;padding:0 28px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:600;font-size:15px;letter-spacing:-.01em}
+.brand svg{width:22px;height:22px;flex:none}
+.top-meta{font-size:12.5px;color:var(--muted);margin-left:6px}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.link{background:none;border:1px solid transparent;border-radius:999px;padding:7px 13px;font-size:13px;color:var(--muted);text-decoration:none;cursor:pointer;transition:.18s;white-space:nowrap}
+.link:hover{color:var(--ink);border-color:var(--line)}
+.link strong{font-weight:500;color:var(--ink)}
 
-/* ── Hero ──────────────────────────────────────────────────────────────── */
-.hero{display:grid;grid-template-columns:1.02fr .98fr;gap:64px;align-items:center;padding-top:76px;padding-bottom:64px}
-.eyebrow{display:flex;align-items:center;gap:10px;margin:0 0 24px;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
-h1{font:600 clamp(44px,6.4vw,74px)/1.02 var(--serif);letter-spacing:-.025em;margin:0 0 24px;text-wrap:balance}
-h1 em{font-style:italic;color:var(--accent);font-weight:500}
-.lead{max-width:47ch;margin:0 0 32px;font-size:18.5px;line-height:1.6;color:var(--muted)}
-.lead b{color:var(--ink);font-weight:600}
-.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:38px}
-.specs{display:flex;flex-wrap:wrap;gap:0;margin:0;padding:0;list-style:none;border-top:1px solid var(--line);padding-top:22px;max-width:500px}
-.specs li{font-size:13.5px;color:var(--muted);padding:0 18px;border-left:1px solid var(--line)}
-.specs li:first-child{padding-left:0;border-left:0}
-.specs b{display:block;font-size:16.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
-.hero-art{margin:0;position:relative;transform:rotate(.8deg)}
-.hero-art .frame{background:var(--card);border:1px solid var(--line);border-radius:32px;padding:12px;box-shadow:var(--shadow-lg)}
-.hero-art img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:22px;background:#EDE5D8}
-.hero-art figcaption{display:flex;justify-content:space-between;gap:12px;padding:14px 8px 4px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.hero-art figcaption b{font-weight:600;color:var(--ink)}
-.hero-art .fallback{display:none}
-.hero-art.is-empty img{display:none}
-.hero-art.is-empty .fallback{display:grid;place-items:center;aspect-ratio:1/1;border-radius:22px;background:repeating-linear-gradient(45deg,#F2EADD,#F2EADD 10px,#EFE5D6 10px,#EFE5D6 20px);font-size:14px;color:var(--muted);text-align:center;padding:24px}
-
-/* ── Кнопки ────────────────────────────────────────────────────────────── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font:600 15.5px/1 var(--sans);text-decoration:none;cursor:pointer;border-radius:999px;padding:15px 26px;border:1px solid transparent;transition:transform .15s,box-shadow .2s,background .2s,border-color .2s}
+/* ── Каркас одного экрана ──────────────────────────────────────────────── */
+.app{display:grid;grid-template-columns:344px minmax(0,1fr);gap:44px;width:100%;max-width:1360px;margin:0 auto;padding:30px 28px 26px;height:calc(100vh - 63px);height:calc(100dvh - 63px);min-height:600px}
+.side{display:flex;flex-direction:column;min-height:0;overflow:auto;scrollbar-width:thin}
+.meta{display:flex;align-items:center;gap:9px;margin:0 0 16px;font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.meta::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
+h1{font:500 46px/1.02 var(--serif);letter-spacing:-.02em;margin:0 0 14px}
+h1 em{font-style:italic;color:var(--accent)}
+.sub{margin:0 0 20px;color:var(--muted);font-size:14.5px;max-width:30ch;line-height:1.55}
+.field-label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+textarea{width:100%;flex:none;min-height:130px;resize:none;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;font:400 14.5px/1.55 var(--sans);color:var(--ink);transition:border-color .18s,box-shadow .18s}
+textarea:focus{outline:none;border-color:var(--line-2);box-shadow:0 0 0 3px rgba(198,83,45,.1)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid transparent;border-radius:999px;cursor:pointer;transition:background .18s,color .18s,border-color .18s,transform .12s;white-space:nowrap}
 .btn:active{transform:translateY(1px)}
-.btn-primary{background:var(--accent);color:#FFF9F4;box-shadow:0 12px 26px rgba(198,83,45,.28)}
-.btn-primary:hover{background:var(--accent-dark);box-shadow:0 16px 34px rgba(198,83,45,.34);transform:translateY(-1px)}
-.btn-primary:disabled{opacity:.6;cursor:progress;transform:none;box-shadow:none}
-.btn-ghost{background:rgba(255,253,249,.7);border-color:var(--line);color:var(--ink)}
-.btn-ghost:hover{background:var(--card);border-color:#D9CDBC;box-shadow:var(--shadow)}
-.btn-block{width:100%;padding:17px 24px;font-size:16.5px}
+.btn-main{width:100%;margin-top:12px;padding:15px 20px;background:var(--ink);color:#FAF8F3;font-size:15px;font-weight:500}
+.btn-main:hover{background:#000}
+.btn-main:disabled{opacity:.55;cursor:progress;transform:none}
+.btn-main .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none}
+.note{min-height:20px;margin:12px 0 0;font-size:12.5px;color:var(--muted);line-height:1.45}
+.note.is-ok{color:var(--ok)}
+.note.is-err{color:var(--accent)}
+.fine{margin:4px 0 0;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 
-/* ── Секции ────────────────────────────────────────────────────────────── */
-.section{padding-top:92px}
-.sec-head{max-width:760px;margin:0 0 38px}
-.kicker{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:12.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--accent)}
-.kicker::before{content:"";width:22px;height:1.5px;background:var(--accent);flex:none}
-h2{font:600 clamp(32px,4.2vw,48px)/1.08 var(--serif);letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance}
-h2 em{font-style:italic;color:var(--accent);font-weight:500}
-.sec-head p:last-child{margin:0;color:var(--muted);font-size:17.5px}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.scenes{margin-top:auto;padding-top:20px;border-top:1px solid var(--line)}
+.scenes-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.scenes-head span{font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.scene-list{display:flex;flex-direction:column;gap:3px}
+.scene{display:flex;align-items:center;gap:10px;padding:4px;border:1px solid transparent;border-radius:10px;background:none;cursor:pointer;text-align:left;transition:background .15s,border-color .15s}
+.scene:hover{background:#EEEADF}
+.scene.is-active{background:var(--panel);border-color:var(--line)}
+.scene img{width:38px;height:38px;border-radius:7px;object-fit:cover;flex:none;background:var(--stage)}
+.scene .t{display:flex;flex-direction:column;gap:0;min-width:0}
+.scene b{font-weight:500;font-size:13px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scene small{display:none}
+.scene .n{margin-left:auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
 
-/* ── Генератор ─────────────────────────────────────────────────────────── */
-.gen{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6.4fr);gap:22px;align-items:start}
-.controls{padding:32px;display:flex;flex-direction:column;gap:24px}
-.label{display:block;font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:11px}
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{font:500 13.5px/1 var(--sans);color:var(--ink);background:#FBF6EE;border:1px solid var(--line);border-radius:999px;padding:9px 15px;cursor:pointer;transition:.18s}
-.chip:hover{border-color:#D8C9B5;background:#fff}
-.chip.is-active{background:var(--accent);border-color:var(--accent);color:#FFF9F4}
-.input{width:100%;background:#FDFAF4;border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px;font:400 15.5px/1.55 var(--sans);color:var(--ink);transition:border-color .2s,box-shadow .2s}
-.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(198,83,45,.12)}
-textarea.input{resize:vertical;min-height:132px}
-select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236E6357' stroke-width='1.7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 15px center;padding-right:38px}
-.adv{border-top:1px solid var(--line);padding-top:18px}
-.adv summary{font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
-.adv summary::-webkit-details-marker{display:none}
-.adv summary::before{content:"+";display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--line-soft);color:var(--muted);font-size:15px;line-height:1}
-.adv[open] summary::before{content:"–"}
-.adv-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-top:18px}
-.adv-body .full{grid-column:1/-1}
-.check{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);margin-top:9px;cursor:pointer}
-.check input{accent-color:var(--accent);width:15px;height:15px}
-.hint{font-size:13px;color:var(--muted);margin:12px 0 0;line-height:1.5}
-.fineprint{margin:0;text-align:center;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-
-.stage{padding:18px}
-.canvas-wrap{position:relative;aspect-ratio:1/1;border-radius:18px;overflow:hidden;background:#171310}
+/* ── Сцена ─────────────────────────────────────────────────────────────── */
+.stage-col{display:flex;flex-direction:column;min-height:0;gap:14px}
+.stage{position:relative;flex:1;min-height:0;display:grid;place-items:center;background:var(--stage);border-radius:18px;overflow:hidden}
+.stage-inner{position:relative;width:min(100%,calc(100dvh - 190px));aspect-ratio:1/1;max-height:100%;border-radius:18px;overflow:hidden;background:#201D19}
+#preview{display:block;width:100%;height:100%;object-fit:cover;background:#201D19}
+#preview[hidden]{display:none}
 #canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.canvas-empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:rgba(255,249,244,.6);font-size:12.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;transition:opacity .45s}
-.canvas-empty.is-hidden{opacity:0}
-.mode-badge{position:absolute;left:14px;bottom:14px;background:rgba(23,19,16,.62);backdrop-filter:blur(8px);color:#F6EDE3;font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;letter-spacing:.01em}
-.progress{height:7px;border-radius:99px;background:var(--line-soft);overflow:hidden;margin:18px 2px 16px}
-.progress-bar{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--accent),#E08A5F);transition:width .45s ease}
-.stages{display:flex;gap:6px;list-style:none;margin:0 0 14px;padding:0}
-.stages li{flex:1;display:flex;flex-direction:column;gap:7px;font-size:11.5px;font-weight:500;color:var(--muted);letter-spacing:.01em}
-.stages li i{width:100%;height:3px;border-radius:99px;background:var(--line-soft);transition:.3s}
-.stages li.active{color:var(--ink);font-weight:600}
-.stages li.active i{background:#E0B49F}
-.stages li.done{color:var(--sage);font-weight:600}
-.stages li.done i{background:var(--sage)}
-.stage-meta{display:flex;justify-content:space-between;align-items:baseline;padding:0 2px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
-.timer{font-weight:600;font-size:16px;color:var(--ink)}
-.log-box{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
-.log-box summary{font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
-.log{margin:12px 0 0;padding:14px 16px;background:#FBF6EE;border:1px solid var(--line-soft);border-radius:12px;max-height:180px;overflow:auto;font:12.5px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#4A4038;white-space:pre-wrap;word-break:break-word}
-.log .t-err{color:#B23A2C;font-weight:600}
-.log .t-ok{color:var(--sage);font-weight:600}
-.log .t-dim{color:#9A8D7E}
+#canvas[hidden]{display:none}
+.stage-empty{position:absolute;inset:0;display:grid;place-items:center;padding:30px;text-align:center;color:var(--muted);font-size:13.5px;background:repeating-linear-gradient(45deg,#EFEBE2,#EFEBE2 12px,#ECE7DD 12px,#ECE7DD 24px)}
+.stage-empty[hidden]{display:none}
+.overlay{position:absolute;left:14px;right:14px;bottom:14px;display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:999px;background:rgba(20,18,15,.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#F6F1E9;font-size:12.5px;transition:opacity .3s}
+.overlay[hidden]{display:none;opacity:0}
+.overlay .pulse{width:7px;height:7px;border-radius:50%;background:#F0B49B;animation:pulse 1s ease-in-out infinite;flex:none}
+@keyframes pulse{50%{opacity:.35}}
+.overlay .pct{margin-left:auto;font-variant-numeric:tabular-nums;opacity:.8}
+.progress{height:2px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress-bar{height:100%;width:0;background:var(--accent);transition:width .4s ease}
+.progress[hidden]{display:none}
+.readout{display:flex;align-items:baseline;justify-content:space-between;gap:18px;min-height:34px;font-size:12.5px;color:var(--muted)}
+.readout p{margin:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.45}
+.readout span{white-space:nowrap;font-variant-numeric:tabular-nums}
 
-/* ── Галерея ───────────────────────────────────────────────────────────── */
-.gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-.tile{position:relative;margin:0;background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;cursor:zoom-in;box-shadow:var(--shadow);transition:transform .22s,box-shadow .25s}
-.tile:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
-.tile:first-child{grid-column:span 2;grid-row:span 2}
-.tile img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:#EDE5D8}
-.tile:first-child img{aspect-ratio:auto;height:100%;position:absolute;inset:0}
-.tile:first-child{min-height:100%}
-.tile figcaption{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px;border-radius:999px;background:rgba(30,25,20,.5);backdrop-filter:blur(10px);color:#FFF9F2;font-size:12.5px;font-variant-numeric:tabular-nums}
-.tile figcaption b{font-weight:600}
-.tile figcaption span{opacity:.78;font-size:11.5px}
-.tile.is-empty{grid-column:span 2;display:grid;place-items:center;min-height:280px;color:var(--muted);font-size:14px;text-align:center;padding:32px;cursor:default;box-shadow:none;background:transparent;border-style:dashed}
-.live{margin-top:44px}
-.live h3{font:600 24px/1.2 var(--serif);margin:0 0 16px;letter-spacing:-.01em}
-.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.grid-4 .tile{grid-column:auto;grid-row:auto}
-.grid-4 .tile img{aspect-ratio:1/1}
-
-/* ── Документы ─────────────────────────────────────────────────────────── */
-.docs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.doc{display:flex;flex-direction:column;gap:6px;padding:26px;background:var(--card);border:1px solid var(--line);border-radius:22px;text-decoration:none;color:var(--ink);box-shadow:var(--shadow);transition:transform .2s,box-shadow .25s,border-color .2s}
-.doc:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:#DCCDB9}
-.doc .num{font-size:12px;font-weight:600;letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
-.doc b{font-size:17px;font-weight:600;letter-spacing:-.01em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.doc span{font-size:13.5px;color:var(--muted);line-height:1.45}
-.doc .go{margin-top:10px;font-size:13px;color:var(--accent);font-weight:600}
-.manifest{margin-top:16px;padding:0;overflow:hidden}
-.manifest summary{display:flex;align-items:center;gap:14px;padding:22px 26px;cursor:pointer;list-style:none;font-size:14.5px;font-weight:600}
-.manifest summary::-webkit-details-marker{display:none}
-.manifest summary span{font-weight:400;color:var(--muted);font-size:13px}
-.manifest summary::after{content:"↓";margin-left:auto;font-size:16px;color:var(--muted);transition:transform .2s}
-.manifest[open] summary::after{transform:rotate(180deg)}
-.manifest pre{margin:0;padding:0 26px 24px;overflow:auto;max-height:420px;font:12.5px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#4A4038;white-space:pre-wrap;overflow-wrap:anywhere}
-
-/* ── Подвал ────────────────────────────────────────────────────────────── */
-.footer{margin-top:96px;border-top:1px solid var(--line);background:rgba(255,253,249,.55)}
-.foot{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-top:28px;padding-bottom:28px;color:var(--muted);font-size:13.5px}
-.foot .logo{font-size:15px}
-.foot a{color:var(--muted);text-decoration:none}
-.foot a:hover{color:var(--accent)}
-.foot .right{margin-left:auto;display:flex;gap:18px}
-
-/* ── Лайтбокс ──────────────────────────────────────────────────────────── */
-.lightbox{position:fixed;inset:0;z-index:100;background:rgba(23,19,16,.9);display:grid;place-items:center;padding:26px;backdrop-filter:blur(8px)}
-.lightbox[hidden]{display:none}
-.lightbox figure{margin:0;max-width:min(92vw,820px);display:flex;flex-direction:column;gap:16px;align-items:center}
-.lightbox img{max-width:100%;max-height:72vh;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
-.lightbox figcaption{color:#EADFD2;font-size:14px;text-align:center;max-width:640px;line-height:1.6}
-.lightbox figcaption b{color:#fff;font-size:15px}
-.lb-close{position:absolute;top:20px;right:24px;width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:22px;cursor:pointer;transition:.2s}
-.lb-close:hover{background:rgba(255,255,255,.24)}
-
-/* ── Загрузка ──────────────────────────────────────────────────────────── */
-.boot{position:fixed;inset:0;z-index:120;background:rgba(250,246,239,.95);display:grid;place-items:center}
-.boot[hidden]{display:none}
-.boot-card{text-align:center;padding:32px;max-width:340px}
-.spin{width:40px;height:40px;margin:0 auto 18px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:rot 1s linear infinite}
-@keyframes rot{to{transform:rotate(360deg)}}
-.boot-card p{font-weight:600;margin:0 0 6px}
-.boot-sub{color:var(--muted);font-size:13px;font-weight:400!important;line-height:1.5}
-
-/* ── Появление ─────────────────────────────────────────────────────────── */
-.reveal{opacity:0;transform:translateY(18px);transition:opacity .65s ease,transform .65s ease}
-.reveal.visible{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
-  *{animation:none!important;transition:none!important}
-  .reveal{opacity:1;transform:none}
-  .hero-art{transform:none}
-}
+/* ── Манифест ──────────────────────────────────────────────────────────── */
+dialog{width:min(760px,calc(100vw - 40px));max-height:80vh;padding:0;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--ink);box-shadow:0 40px 90px rgba(25,23,19,.3)}
+dialog::backdrop{background:rgba(25,23,19,.34);backdrop-filter:blur(3px)}
+.dlg-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 22px;border-bottom:1px solid var(--line)}
+.dlg-head b{font-size:14px;font-weight:600}
+.dlg-close{border:none;background:none;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:8px}
+.dlg-close:hover{background:var(--line)}
+dialog pre{margin:0;padding:20px 22px 24px;overflow:auto;max-height:calc(80vh - 64px);font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#4B453C;white-space:pre-wrap;overflow-wrap:anywhere}
 
 /* ── Адаптив ───────────────────────────────────────────────────────────── */
 @media (max-width:1000px){
-  .hero{grid-template-columns:1fr;gap:40px;padding-top:56px}
-  .hero-art{max-width:560px;margin:0 auto;width:100%}
-  .gen{grid-template-columns:1fr}
-  .docs{grid-template-columns:1fr}
-  .gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .tile:first-child{grid-column:span 2;grid-row:span 1}
-  .tile:first-child img{position:static;aspect-ratio:4/3;height:auto}
-  .tile:first-child{min-height:0}
-  .grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app{grid-template-columns:300px minmax(0,1fr);gap:26px;padding:24px 20px;height:auto;min-height:calc(100dvh - 63px)}
+  .stage-inner{width:100%}
 }
-@media (max-width:700px){
-  .wrap{padding:0 18px}
-  .nav{display:none}
-  .bar{height:64px}
-  body{font-size:16px}
-  .section{padding-top:68px}
-  .controls{padding:24px}
-  .stages li{font-size:10px}
-  .adv-body{grid-template-columns:1fr}
-  .foot .right{margin-left:0;gap:18px}
+@media (max-width:820px){
+  .top{padding:0 18px;height:58px}
+  .top-meta{display:none}
+  .app{grid-template-columns:1fr;gap:22px;padding:20px 18px 32px;height:auto;min-height:0}
+  .side{overflow:visible}
+  h1{font-size:38px}
+  .sub{max-width:none;margin-bottom:20px}
+  .scenes{margin-top:0;padding-top:22px}
+  textarea{min-height:110px}
+  .stage{min-height:0}
+  .stage-inner{width:100%}
+  .readout{min-height:0}
 }
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="wrap bar">
-    <a class="logo" href="#top" aria-label="Наздратенко — наверх">
-      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-        <circle cx="16" cy="16" r="10.5" stroke="#C6532D" stroke-width="2.6"/>
-        <circle cx="16" cy="16" r="3.2" fill="#C6532D"/>
-      </svg>
-      <span>Наздратенко</span>
-    </a>
-    <nav class="nav" aria-label="Разделы страницы">
-      <a href="#generator">Генератор</a>
-      <a href="#gallery">Галерея</a>
-      <a href="#docs">Документы</a>
-    </nav>
-    <span class="tag">Вариант 16</span>
+<header class="top">
+  <a class="brand" href="/" aria-label="На главную">
+    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <circle cx="16" cy="16" r="10.5" stroke="#C6532D" stroke-width="2.8"/>
+      <circle cx="16" cy="16" r="3.2" fill="#C6532D"/>
+    </svg>
+    <span>Наздратенко</span>
+  </a>
+  <span class="top-meta">ЛР №6 · вариант 16</span>
+  <div class="top-actions">
+    <button class="link" id="manifest-open" type="button">Манифест</button>
+    <a class="link" href="https://github.com/Ilia-sharp/SII-LR06-Nazdratenko" target="_blank" rel="noopener"><strong>GitHub</strong> ↗</a>
   </div>
 </header>
 
-<main id="top">
+<main class="app">
+  <section class="side">
+    <p class="meta">Рабочее место · interior</p>
+    <h1>Рабочее <em>место</em></h1>
+    <p class="sub">Опишите интерьер — SD-Turbo нарисует его за четыре шага.</p>
 
-  <section class="hero wrap">
-    <div class="reveal">
-      <p class="eyebrow">ЛР №6 · Генеративные ИИ-системы</p>
-      <h1>Из шума —<br><em>рабочее место</em></h1>
-      <p class="lead">Модель <b>SD-Turbo</b> рисует интерьер за четыре шага. Каждая картинка воспроизводится точно: seed <b>116</b>, модель и время записаны в манифесте.</p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="#generator">Сгенерировать картинку</a>
-        <a class="btn btn-ghost" href="#gallery">Смотреть галерею</a>
-      </div>
-      <ul class="specs">
-        <li><b>SD-Turbo</b>модель</li>
-        <li><b>4</b>шага</li>
-        <li><b>116</b>seed</li>
-        <li><b>512</b>пикселей</li>
-      </ul>
+    <label class="field-label" for="prompt">Промпт</label>
+    <textarea id="prompt" maxlength="1500" spellcheck="false" placeholder="Свет, мебель, настроение…"></textarea>
+
+    <button class="btn btn-main" id="generate" type="button"><span class="dot"></span>Сгенерировать</button>
+    <p class="note" id="note">Выберите сцену или напишите свой промпт.</p>
+    <p class="fine">SD-Turbo · 4 шага · seed 116 · 512 × 512</p>
+
+    <div class="scenes">
+      <div class="scenes-head"><span>Сцены прогона</span><span>5</span></div>
+      <div class="scene-list" id="scene-list"></div>
     </div>
-
-    <figure class="hero-art reveal" id="hero-art">
-      <div class="frame">
-        <img id="hero-img" alt="Рабочее место, сгенерированное SD-Turbo" src="/api/images/img_000.png">
-        <div class="fallback">Картинки появятся после прогона<br><code>python -m src.generate</code></div>
-        <figcaption><b id="hero-file">img_000.png</b><span id="hero-meta">seed 116</span></figcaption>
-      </div>
-    </figure>
   </section>
 
-  <section class="section" id="generator">
-    <div class="wrap">
-      <div class="sec-head reveal">
-        <p class="kicker">Попробуйте сами</p>
-        <h2>Опишите своё <em>рабочее&nbsp;место</em></h2>
-        <p>Выберите готовую сцену или напишите промпт. Диффузия покажет каждый шаг прямо здесь.</p>
-      </div>
-
-      <div class="gen">
-        <form class="panel controls reveal" id="gen-form">
-          <div>
-            <span class="label">Готовая сцена</span>
-            <div class="chips" id="prompt-chips"></div>
-          </div>
-
-          <div>
-            <label class="label" for="prompt">Промпт</label>
-            <textarea id="prompt" class="input" rows="4" maxlength="1500" placeholder="Опишите свет, мебель, настроение…"></textarea>
-          </div>
-
-          <details class="adv">
-            <summary>Параметры и режим</summary>
-            <div class="adv-body">
-              <div>
-                <label class="label" for="seed">Seed</label>
-                <input id="seed" class="input" type="number" value="116" min="0" max="2147483647" disabled>
-                <label class="check"><input type="checkbox" id="seed-free"> менять seed</label>
-              </div>
-              <div>
-                <label class="label" for="mode">Режим</label>
-                <select id="mode" class="input">
-                  <option value="auto">Авто</option>
-                  <option value="replay">Повтор прогона</option>
-                  <option value="real">Локально</option>
-                  <option value="cloud">Облако</option>
-                </select>
-              </div>
-              <p class="hint full" id="mode-hint">Авто: повтор прогона → локальная генерация → облачное демо.</p>
-            </div>
-          </details>
-
-          <button id="generate-btn" class="btn btn-primary btn-block" type="submit">Сгенерировать</button>
-          <p class="fineprint">seed 116 · 4 шага · 512×512 · ≈18 с на CPU</p>
-        </form>
-
-        <div class="panel stage reveal">
-          <div class="canvas-wrap">
-            <canvas id="canvas" width="512" height="512"></canvas>
-            <div class="canvas-empty" id="canvas-empty"><span>шум → изображение</span></div>
-            <div class="mode-badge" id="mode-tag">ожидание</div>
-          </div>
-          <div class="progress" role="progressbar" aria-label="Прогресс генерации">
-            <div class="progress-bar" id="bar"></div>
-          </div>
-          <ol class="stages" id="stages">
-            <li data-stage="load"><i></i>Веса</li>
-            <li data-stage="encode"><i></i>Текст</li>
-            <li data-stage="unet"><i></i>Диффузия</li>
-            <li data-stage="vae"><i></i>Декодер</li>
-            <li data-stage="save"><i></i>Файл</li>
-          </ol>
-          <div class="stage-meta">
-            <span class="timer" id="timer">0.0 с</span>
-            <span id="stage-count">шаг 0 / 4</span>
-          </div>
-          <details class="log-box">
-            <summary>Журнал конвейера</summary>
-            <pre class="log" id="log" aria-live="polite">— журнал пуст —</pre>
-          </details>
+  <section class="stage-col">
+    <div class="stage">
+      <div class="stage-inner" id="stage-inner">
+        <img id="preview" alt="Сгенерированное рабочее место">
+        <canvas id="canvas" width="512" height="512"></canvas>
+        <div class="stage-empty" id="stage-empty">Галерея появится после прогона</div>
+        <div class="overlay" id="overlay" hidden>
+          <span class="pulse"></span>
+          <span id="overlay-text">Генерация…</span>
+          <span class="pct" id="overlay-pct">0%</span>
         </div>
       </div>
     </div>
-  </section>
-
-  <section class="section" id="gallery">
-    <div class="wrap">
-      <div class="sec-head reveal">
-        <p class="kicker">Прогон</p>
-        <h2>Пять сцен. <em>Один seed.</em></h2>
-        <p>Разные промпты при фиксированном seed 116 — так сравнивать честно. Нажмите на картинку, чтобы прочитать промпт.</p>
-      </div>
-      <div class="gallery reveal" id="gallery-grid"></div>
-      <div class="live" id="live-strip" hidden>
-        <h3>Сгенерировано прямо сейчас</h3>
-        <div class="grid-4" id="live-grid"></div>
-      </div>
+    <div class="progress" id="progress" hidden><div class="progress-bar" id="bar"></div></div>
+    <div class="readout">
+      <p id="caption">Промпт появится здесь</p>
+      <span id="readout-meta">seed 116</span>
     </div>
   </section>
-
-  <section class="section" id="docs">
-    <div class="wrap">
-      <div class="sec-head reveal">
-        <p class="kicker">Сдача</p>
-        <h2>Документы и <em>воспроизводимость</em></h2>
-        <p>Три документа проекта и манифест прогона — по ним проверяется работа.</p>
-      </div>
-
-      <div class="docs reveal">
-        <a class="doc" href="https://github.com/Ilia-sharp/SII-LR06-Nazdratenko/blob/main/MODEL_CARD.md" target="_blank" rel="noopener">
-          <span class="num">01</span><b>MODEL_CARD.md</b>
-          <span>Модель, лицензия, назначение, ограничения и риски.</span>
-          <span class="go">Открыть на GitHub ↗</span>
-        </a>
-        <a class="doc" href="https://github.com/Ilia-sharp/SII-LR06-Nazdratenko/blob/main/ARCHITECTURE.md" target="_blank" rel="noopener">
-          <span class="num">02</span><b>ARCHITECTURE.md</b>
-          <span>Путь от промпта до PNG: энкодер, диффузия, декодер.</span>
-          <span class="go">Открыть на GitHub ↗</span>
-        </a>
-        <a class="doc" href="https://github.com/Ilia-sharp/SII-LR06-Nazdratenko/blob/main/README.md" target="_blank" rel="noopener">
-          <span class="num">03</span><b>README.md</b>
-          <span>Запуск, железо и время генерации одной картинки.</span>
-          <span class="go">Открыть на GitHub ↗</span>
-        </a>
-      </div>
-
-      <details class="panel manifest reveal">
-        <summary>manifest.json <span id="manifest-sum">параметры каждого изображения</span></summary>
-        <pre id="manifest-view">загрузка…</pre>
-      </details>
-    </div>
-  </section>
-
 </main>
 
-<footer class="footer">
-  <div class="wrap foot">
-    <a class="logo" href="#top">
-      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true" style="width:22px;height:22px">
-        <circle cx="16" cy="16" r="10.5" stroke="#C6532D" stroke-width="2.6"/>
-        <circle cx="16" cy="16" r="3.2" fill="#C6532D"/>
-      </svg>
-      <span>Наздратенко</span>
-    </a>
-    <span>Системы искусственного интеллекта · ЛР №6 · 2026</span>
-    <div class="right">
-      <a href="https://github.com/Ilia-sharp/SII-LR06-Nazdratenko" target="_blank" rel="noopener">GitHub ↗</a>
-      <a href="https://huggingface.co/stabilityai/sd-turbo" target="_blank" rel="noopener">SD-Turbo ↗</a>
-    </div>
+<dialog id="manifest-dialog">
+  <div class="dlg-head">
+    <b>manifest.json</b>
+    <button class="dlg-close" id="manifest-close" type="button" aria-label="Закрыть">×</button>
   </div>
-</footer>
-
-<div class="lightbox" id="lightbox" hidden>
-  <button class="lb-close" id="lb-close" type="button" aria-label="Закрыть">×</button>
-  <figure>
-    <img id="lb-img" alt="">
-    <figcaption id="lb-cap"></figcaption>
-  </figure>
-</div>
-
-<div class="boot" id="boot" hidden>
-  <div class="boot-card">
-    <div class="spin"></div>
-    <p id="boot-msg">Сервер просыпается…</p>
-    <p class="boot-sub">Бесплатный тариф Render: первый запрос может занимать до минуты.</p>
-  </div>
-</div>
+  <pre id="manifest-view">загрузка…</pre>
+</dialog>
 
 <script>
 "use strict";
-/* ════════════════════ Утилиты ════════════════════ */
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-const escHtml = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-const fmtBytes = b => !b ? "—" : b < 1024*1024 ? Math.round(b/1024) + " КБ" : (b/1048576).toFixed(1) + " МБ";
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
 const LABELS = ["Уютное утро", "Минимализм", "Общежитие", "Лофт", "У окна"];
+const NUM = ["01", "02", "03", "04", "05"];
+const MODE_RU = {replay: "повтор прогона", real: "локальная генерация", cloud: "облако · flux"};
 
-function logLine(text, cls) {
-  const box = $("#log");
-  if (box.dataset.empty !== "1") { box.textContent = ""; box.dataset.empty = "1"; }
-  const t = new Date().toLocaleTimeString("ru-RU", {hour12:false});
-  const line = document.createElement("div");
-  if (cls) line.className = cls;
-  line.textContent = `[${t}] ${text}`;
-  box.appendChild(line);
-  while (box.childNodes.length > 220) box.removeChild(box.firstChild);
-  box.scrollTop = box.scrollHeight;
+const preview = $("#preview"), canvas = $("#canvas"), ctx = canvas.getContext("2d");
+let prompts = [], scenes = [], activeScene = 0, running = false, t0 = 0, timerId = null;
+let lastPreview = null, currentPrompt = "";
+
+/* ── Шум и превью ─────────────────────────────────────────────────────── */
+function noise() {
+  const w = canvas.width, h = canvas.height;
+  const img = ctx.createImageData(w, h), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const v = (Math.random() * 255) | 0;
+    d[i] = v; d[i+1] = v; d[i+2] = Math.min(255, v + 14); d[i+3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+function showCanvas(on) {
+  canvas.hidden = !on;
+  preview.hidden = on;
+  if (on) noise();
+}
+function drawCover(img) {
+  const w = canvas.width, h = canvas.height;
+  const k = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+  const dw = img.naturalWidth * k, dh = img.naturalHeight * k;
+  ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+}
+function renderNoise(progress) {
+  if (lastPreview && lastPreview.complete && lastPreview.naturalWidth) {
+    drawCover(lastPreview);
+    const a = Math.max(0, 1 - progress);
+    if (a > .01) { ctx.globalAlpha = a; noise(); ctx.globalAlpha = 1; }
+  } else {
+    noise();
+  }
 }
 
-/* ════════════════════ Холодный старт ════════════════════ */
+/* ── Статус ───────────────────────────────────────────────────────────── */
+function note(text, kind) {
+  const el = $("#note");
+  el.textContent = text;
+  el.className = "note" + (kind ? " is-" + kind : "");
+}
+function startTimer() {
+  t0 = performance.now();
+  timerId = setInterval(() => {
+    $("#readout-meta").textContent = ((performance.now() - t0) / 1000).toFixed(1) + " с";
+  }, 100);
+}
+function stopTimer() { clearInterval(timerId); timerId = null; }
+
+function setProgress(p) {
+  $("#bar").style.width = Math.min(100, Math.round(p * 100)) + "%";
+  $("#overlay-pct").textContent = Math.min(100, Math.round(p * 100)) + "%";
+}
+function overlay(text) {
+  const el = $("#overlay");
+  if (text === null) { el.hidden = true; $("#progress").hidden = true; return; }
+  el.hidden = false;
+  $("#progress").hidden = false;
+  $("#overlay-text").textContent = text;
+}
+
+/* ── Данные ───────────────────────────────────────────────────────────── */
 async function waitServer() {
-  for (let attempt = 1; attempt <= 6; attempt++) {
+  for (let i = 1; i <= 6; i++) {
     try {
       const r = await fetch("/api/health", {cache: "no-store"});
       if (r.ok) return await r.json();
-    } catch (e) { /* сервер ещё спит */ }
-    $("#boot").hidden = false;
-    $("#boot-msg").textContent = `Сервер просыпается (попытка ${attempt} из 6)…`;
-    await sleep(9000);
+    } catch (e) {}
+    note(`Сервер просыпается… попытка ${i} из 6`);
+    await new Promise(r => setTimeout(r, 9000));
   }
-  $("#boot-msg").textContent = "Сервер недоступен. Обновите страницу через минуту.";
   throw new Error("server unavailable");
 }
 
-/* ════════════════════ Данные страницы ════════════════════ */
-async function loadPrompts() {
-  try {
-    const data = await (await fetch("/api/prompts")).json();
-    const box = $("#prompt-chips"), ta = $("#prompt");
-    box.innerHTML = "";
-    data.prompts.forEach((p, idx) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "chip" + (idx === 0 ? " is-active" : "");
-      b.textContent = LABELS[idx] || `Сцена ${idx + 1}`;
-      b.title = p;
-      b.addEventListener("click", () => {
-        $$(".chip", box).forEach(c => c.classList.remove("is-active"));
-        b.classList.add("is-active");
-        ta.value = p;
-      });
-      box.appendChild(b);
-    });
-    ta.value = data.prompts[0] || "";
-  } catch (e) { logLine("Не удалось получить промпты: " + e.message, "t-err"); }
-}
+async function loadScenes() {
+  const [pRes, iRes] = await Promise.all([
+    fetch("/api/prompts"),
+    fetch("/api/demo-images"),
+  ]);
+  prompts = (await pRes.json()).prompts || [];
 
-function shotFigure(url, title, meta, promptText, extraClass) {
-  const fig = document.createElement("figure");
-  fig.className = "tile" + (extraClass ? " " + extraClass : "");
-  fig.innerHTML = `<img src="${url}" alt="${escHtml(title)}" loading="lazy">
-    <figcaption><b>${escHtml(title)}</b><span>${escHtml(meta)}</span></figcaption>`;
-  fig.addEventListener("click", () => openLightbox(url, title, meta, promptText));
-  return fig;
-}
-
-async function loadGallery() {
-  const grid = $("#gallery-grid");
   try {
-    const data = await (await fetch("/api/demo-images")).json();
-    grid.innerHTML = "";
-    if (!data.items.length) {
-      grid.innerHTML = `<div class="tile is-empty">Прогона ещё не было.<br>Запустите <code>python -m src.generate --prompts prompts.txt --out outputs/</code></div>`;
-      return;
-    }
-    data.items.forEach((it, idx) => {
-      grid.appendChild(shotFigure(
-        it.url,
-        `${String(idx + 1).padStart(2, "0")} · ${LABELS[idx] || it.file}`,
-        `${it.elapsed_sec.toFixed(1)} с`,
-        it.prompt
-      ));
-    });
-    const first = data.items[0];
-    $("#hero-img").src = first.url;
-    $("#hero-file").textContent = first.file;
-    $("#hero-meta").textContent = `seed ${first.seed} · ${first.elapsed_sec.toFixed(1)} с`;
+    const data = await iRes.json();
+    scenes = data.items || [];
   } catch (e) {
-    grid.innerHTML = `<div class="tile is-empty">Галерея недоступна: ${escHtml(e.message)}</div>`;
+    scenes = [];
   }
+
+  const box = $("#scene-list");
+  box.innerHTML = "";
+  if (!scenes.length) {
+    $("#stage-empty").hidden = false;
+    preview.hidden = true;
+    $("#caption").textContent = "Прогон ещё не выполнялся";
+    note("Нет сохранённых изображений — запустите python -m src.generate", "err");
+    return;
+  }
+  $("#stage-empty").hidden = true;
+
+  scenes.forEach((it, idx) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "scene" + (idx === 0 ? " is-active" : "");
+    b.title = it.prompt || "";
+    b.innerHTML = `<img src="${it.url}" alt="" loading="lazy">
+      <span class="t"><b>${esc(NUM[idx] + " · " + (LABELS[idx] || it.file))}</b></span>
+      <span class="n">${(it.elapsed_sec || 0).toFixed(1)} с</span>`;
+    b.addEventListener("click", () => selectScene(idx));
+    box.appendChild(b);
+  });
+
+  selectScene(0);
+  $("#prompt").value = prompts[0] || scenes[0].prompt || "";
+  note("Выберите сцену или напишите свой промпт.");
 }
 
-async function loadLive() {
-  try {
-    const data = await (await fetch("/api/live-images")).json();
-    data.items.forEach(it => addLiveShot(it));
-  } catch (e) { /* необязательный раздел */ }
+function selectScene(idx) {
+  if (!scenes[idx]) return;
+  activeScene = idx;
+  const it = scenes[idx];
+  currentPrompt = it.prompt;
+  $("#prompt").value = prompts[idx] || it.prompt || "";
+  $$(".scene").forEach((b, i) => b.classList.toggle("is-active", i === idx));
+  preview.src = it.url;
+  preview.hidden = false;
+  canvas.hidden = true;
+  $("#stage-empty").hidden = true;
+  overlay(null);
+  $("#caption").textContent = it.prompt;
+  $("#readout-meta").textContent = `seed ${it.seed ?? 116} · ${(it.elapsed_sec || 0).toFixed(1)} с`;
 }
 
-function addLiveShot(it) {
-  $("#live-strip").hidden = false;
-  const grid = $("#live-grid");
-  const fig = shotFigure(it.url, it.file,
-    `seed ${it.seed ?? "—"} · ${it.elapsed_sec ? it.elapsed_sec.toFixed(1) + " с" : fmtBytes(it.size_bytes)}`,
-    it.prompt || "");
-  grid.prepend(fig);
-  while (grid.children.length > 8) grid.removeChild(grid.lastChild);
-}
+$("#prompt").addEventListener("input", () => {
+  currentPrompt = $("#prompt").value.trim();
+  $$(".scene").forEach(b => b.classList.remove("is-active"));
+});
 
 async function loadManifest() {
   const view = $("#manifest-view");
   try {
     const m = await (await fetch("/api/manifest")).json();
     view.textContent = JSON.stringify(m, null, 2);
-    $("#manifest-sum").textContent = `прогон ${m.run_id || "—"} · ${(m.items || []).length} изображений`;
   } catch (e) {
     view.textContent = "manifest.json ещё не создан.\nЗапустите: python -m src.generate --prompts prompts.txt --out outputs/";
-    $("#manifest-sum").textContent = "манифеста пока нет";
   }
 }
 
-/* ════════════════════ Canvas: шум → изображение ════════════════════ */
-const canvas = $("#canvas"), ctx = canvas.getContext("2d");
-let lastPreview = null;
-
-function drawImageCover(imgEl) {
-  const w = canvas.width, h = canvas.height;
-  const scale = Math.max(w / imgEl.naturalWidth, h / imgEl.naturalHeight);
-  const dw = imgEl.naturalWidth * scale, dh = imgEl.naturalHeight * scale;
-  ctx.drawImage(imgEl, (w - dw) / 2, (h - dh) / 2, dw, dh);
-}
-
-function renderCanvas(progress) {
-  if (lastPreview && lastPreview.complete && lastPreview.naturalWidth) {
-    drawImageCover(lastPreview);
-    const noiseAlpha = Math.max(0, 1 - progress);
-    if (noiseAlpha > 0.01) {
-      ctx.globalAlpha = noiseAlpha;
-      drawNoiseOverlay();
-      ctx.globalAlpha = 1;
-    }
-  } else {
-    drawNoiseOverlay();
-  }
-}
-
-function drawNoiseOverlay() {
-  const w = canvas.width, h = canvas.height;
-  const img = ctx.createImageData(w, h), d = img.data;
-  for (let i = 0; i < d.length; i += 4) {
-    const v = (Math.random() * 255) | 0;
-    d[i] = v; d[i+1] = v; d[i+2] = v + 14 > 255 ? 255 : v + 14; d[i+3] = 255;
-  }
-  ctx.putImageData(img, 0, 0);
-}
-
-function loadPreview(dataUrl, cb) {
-  const im = new Image();
-  im.onload = () => { lastPreview = im; if (cb) cb(); };
-  im.src = dataUrl;
-}
-
-/* ════════════════════ Стадии и прогресс ════════════════════ */
-const stageEls = {};
-$$("#stages li").forEach(li => stageEls[li.dataset.stage] = li);
-
-function resetStages() {
-  Object.values(stageEls).forEach(li => li.className = "");
-  $("#stage-count").textContent = "шаг 0 / 4";
-}
-function setStage(name, done) {
-  Object.entries(stageEls).forEach(([key, li]) => {
-    if (key === name) li.className = done ? "done" : "active";
-    else if (li.classList.contains("active") && done !== undefined) li.className = "done";
-  });
-}
-function setProgress(p) { $("#bar").style.width = Math.min(100, Math.round(p * 100)) + "%"; }
-function markAllDone() {
-  Object.values(stageEls).forEach(li => { if (li.className === "active") li.className = "done"; });
-}
-
-/* ════════════════════ Генерация (SSE через fetch) ════════════════════ */
-let running = false, timerId = null, t0 = 0;
-
-const MODE_HINTS = {
-  auto:   "Авто: повтор прогона → локальная генерация → облачное демо.",
-  replay: "Повтор прогона: воспроизводит сохранённый прогон из manifest.json.",
-  real:   "Локально: настоящий инференс SD-Turbo на сервере. На CPU около 20–60 с.",
-  cloud:  "Облако: демо через pollinations.ai — работает без torch."
-};
-
-$("#mode").addEventListener("change", e => { $("#mode-hint").textContent = MODE_HINTS[e.target.value]; });
-
-$("#seed-free").addEventListener("change", e => {
-  const on = e.target.checked;
-  $("#seed").disabled = !on;
-  if (!on) $("#seed").value = 116;
-});
-
-function startTimer() {
-  t0 = performance.now();
-  $("#timer").textContent = "0.0 с";
-  timerId = setInterval(() => {
-    $("#timer").textContent = ((performance.now() - t0) / 1000).toFixed(1) + " с";
-  }, 100);
-}
-function stopTimer() { clearInterval(timerId); timerId = null; }
-
-function setRunning(on) {
-  running = on;
-  $("#generate-btn").disabled = on;
-  $("#generate-btn").textContent = on ? "Генерация…" : "Сгенерировать";
-}
-
-async function generate(e) {
-  if (e) e.preventDefault();
+/* ── Генерация ────────────────────────────────────────────────────────── */
+async function generate() {
   if (running) return;
   const prompt = $("#prompt").value.trim();
-  if (!prompt) { logLine("Введите промпт", "t-err"); $("#prompt").focus(); return; }
+  if (!prompt) { note("Напишите промпт или выберите сцену.", "err"); $("#prompt").focus(); return; }
 
-  const seed = $("#seed-free").checked ? (parseInt($("#seed").value, 10) || 116) : 116;
-  const mode = $("#mode").value;
-  const body = JSON.stringify({prompt, seed, mode});
-
-  running = true; setRunning(true);
-  resetStages(); setProgress(0);
-  lastPreview = null;
-  $("#canvas-empty").classList.remove("is-hidden");
-  drawNoiseOverlay();
-  $("#mode-tag").textContent = "старт";
+  running = true;
+  const btn = $("#generate");
+  btn.disabled = true;
+  btn.innerHTML = "<span class=\"dot\"></span>Генерирую…";
+  note("Запрос отправлен…");
+  overlay("Генерация…");
+  setProgress(0);
   startTimer();
-  logLine(`Запрос · режим «${mode}» · seed ${seed}`, "t-dim");
-  logLine(`Промпт: ${prompt.slice(0, 90)}${prompt.length > 90 ? "…" : ""}`);
+  lastPreview = null;
+  showCanvas(true);
+  $("#caption").textContent = prompt;
 
   try {
     const res = await fetch("/api/generate", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body
+      body: JSON.stringify({prompt, seed: 116, mode: "auto"})
     });
-
     if (!res.ok) {
       let msg = `HTTP ${res.status}`;
       try { const j = await res.json(); msg = j.detail || msg; } catch (e) {}
@@ -695,131 +382,105 @@ async function generate(e) {
       const {done, value} = await reader.read();
       if (done) break;
       buf += dec.decode(value, {stream: true});
-      let idx;
-      while ((idx = buf.indexOf("\n\n")) >= 0) {
-        const chunk = buf.slice(0, idx).trim();
-        buf = buf.slice(idx + 2);
+      let i;
+      while ((i = buf.indexOf("\n\n")) >= 0) {
+        const chunk = buf.slice(0, i).trim();
+        buf = buf.slice(i + 2);
         if (chunk.startsWith("data:")) handleEvent(JSON.parse(chunk.slice(5).trim()));
       }
     }
   } catch (err) {
-    logLine("Ошибка: " + err.message, "t-err");
-    $("#mode-tag").textContent = "ошибка";
+    note("Не получилось: " + err.message, "err");
+    overlay(null);
+    paintLastScene();
   } finally {
+    running = false;
     stopTimer();
-    markAllDone();
-    setRunning(false);
+    btn.disabled = false;
+    btn.innerHTML = "<span class=\"dot\"></span>Сгенерировать";
   }
+}
+
+function paintLastScene() {
+  const it = scenes[activeScene];
+  if (!it) return;
+  preview.src = it.url;
+  preview.hidden = false;
+  canvas.hidden = true;
+  $("#readout-meta").textContent = `seed ${it.seed ?? 116}`;
 }
 
 function handleEvent(ev) {
   switch (ev.type) {
     case "meta":
-      $("#mode-tag").textContent = ev.mode === "replay" ? "повтор прогона"
-        : ev.mode === "real" ? "локально · sd-turbo" : "облако · демо";
-      logLine(ev.note || `Режим: ${ev.mode}`, "t-dim");
+      note(ev.note || "Генерация…");
       break;
 
-    case "stage": {
-      const map = {load:"load", encode:"encode", unet:"unet", vae:"vae", save:"save", cloud:"encode"};
-      if (ev.stage === "cloud") {
-        Object.values(stageEls).forEach(li => li.className = "");
-        setProgress(0.25);
-      } else if (map[ev.stage]) {
-        setStage(map[ev.stage], false);
-        const per = {load:0.06, encode:0.14, vae:0.9, save:0.97};
-        if (per[ev.stage] !== undefined) setProgress(per[ev.stage]);
-      }
-      if (ev.stage === "encode") $("#canvas-empty").classList.remove("is-hidden");
-      if (ev.message) logLine(ev.message);
+    case "stage":
+      if (ev.message) overlay(ev.message);
+      if (ev.stage === "load") setProgress(.08);
+      if (ev.stage === "encode") setProgress(.16);
+      if (ev.stage === "vae") setProgress(.92);
+      if (ev.stage === "save") setProgress(.97);
+      if (ev.stage === "cloud") setProgress(.2);
       break;
-    }
 
     case "step": {
-      setStage("unet", false);
-      $("#canvas-empty").classList.add("is-hidden");
       const frac = ev.step / ev.steps;
-      setProgress(0.14 + frac * 0.74);
-      renderCanvas(frac * 0.85);
-      $("#stage-count").textContent = `шаг ${ev.step} / ${ev.steps}`;
-      logLine(ev.message || `Шаг ${ev.step}/${ev.steps}`);
+      setProgress(.16 + frac * .72);
+      overlay(`Шаг ${ev.step} из ${ev.steps}`);
+      renderNoise(frac * .85);
       break;
     }
 
     case "preview":
-      loadPreview(ev.data_url, () => renderCanvas((ev.step || 1) / 4 * 0.85));
+      if (ev.data_url) {
+        const im = new Image();
+        im.onload = () => { lastPreview = im; renderNoise(.5); };
+        im.src = ev.data_url;
+      }
       break;
 
     case "result": {
       setProgress(1);
-      markAllDone();
-      const im = new Image();
-      im.onload = () => { lastPreview = im; drawImageCover(im); };
-      im.src = ev.url;
-      $("#canvas-empty").classList.add("is-hidden");
-      logLine(`Готово: ${ev.file} · ${(ev.elapsed_sec || 0).toFixed ? ev.elapsed_sec.toFixed(1) + " с" : ev.elapsed_sec} · ${fmtBytes(ev.size_bytes)}${ev.note ? " · " + ev.note : ""}`, "t-ok");
-      if (ev.mode !== "replay") addLiveShot(ev);
+      overlay(null);
+      preview.src = ev.url;
+      preview.hidden = false;
+      canvas.hidden = true;
+      $("#stage-empty").hidden = true;
+      $("#caption").textContent = ev.prompt || $("#caption").textContent;
+      const secs = typeof ev.elapsed_sec === "number" ? ev.elapsed_sec.toFixed(1) + " с" : "—";
+      $("#readout-meta").textContent = `${MODE_RU[ev.mode] || ev.mode} · ${secs}`;
+      note(`Готово · ${secs} · ${MODE_RU[ev.mode] || ev.mode}`, "ok");
       break;
     }
 
     case "error":
-      logLine(ev.message, "t-err");
-      $("#mode-tag").textContent = "ошибка";
+      note(ev.message || "Ошибка генерации", "err");
+      overlay(null);
+      paintLastScene();
       break;
 
     case "end":
-      if (ev.count) logLine(`Событий потока больше нет · результатов: ${ev.count}`, "t-dim");
-      if (ev.note) logLine(ev.note, "t-dim");
+      if (!ev.count) overlay(null);
       break;
   }
 }
 
-$("#gen-form").addEventListener("submit", generate);
+$("#generate").addEventListener("click", generate);
 
-/* ════════════════════ Лайтбокс ════════════════════ */
-function openLightbox(url, title, meta, promptText) {
-  $("#lb-img").src = url;
-  $("#lb-cap").innerHTML =
-    `<b>${escHtml(title)}</b> · ${escHtml(meta)}` +
-    (promptText ? `<br><br>${escHtml(promptText)}` : "");
-  $("#lightbox").hidden = false;
-  document.body.style.overflow = "hidden";
-}
-function closeLightbox() {
-  $("#lightbox").hidden = true;
-  document.body.style.overflow = "";
-}
-$("#lb-close").addEventListener("click", closeLightbox);
-$("#lightbox").addEventListener("click", e => { if (e.target === e.currentTarget) closeLightbox(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeLightbox(); });
+/* ── Манифест ─────────────────────────────────────────────────────────── */
+$("#manifest-open").addEventListener("click", () => $("#manifest-dialog").showModal());
+$("#manifest-close").addEventListener("click", () => $("#manifest-dialog").close());
+$("#manifest-dialog").addEventListener("click", e => {
+  if (e.target === $("#manifest-dialog")) $("#manifest-dialog").close();
+});
 
-/* ════════════════════ Появление при прокрутке ════════════════════ */
-function setupReveal() {
-  if (!("IntersectionObserver" in window)) {
-    $$(".reveal").forEach(el => el.classList.add("visible"));
-    return;
-  }
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(en => {
-      if (en.isIntersecting) { en.target.classList.add("visible"); io.unobserve(en.target); }
-    });
-  }, {threshold: 0.08});
-  $$(".reveal").forEach(el => io.observe(el));
-}
-
-/* ════════════════════ Инициализация ════════════════════ */
-(async function init() {
-  drawNoiseOverlay();
-  const hero = $("#hero-img");
-  hero.addEventListener("error", () => $("#hero-art").classList.add("is-empty"));
-  try { await waitServer(); } catch (e) { return; }
-  $("#boot").hidden = true;
-  setupReveal();
-  loadPrompts();
-  loadGallery();
-  loadLive();
+/* ── Старт ────────────────────────────────────────────────────────────── */
+(async () => {
+  try { await waitServer(); } catch (e) { note("Сервер недоступен. Обновите страницу.", "err"); return; }
+  try { await loadScenes(); } catch (e) { note("Не удалось загрузить данные: " + e.message, "err"); }
   loadManifest();
-  logLine("Страница готова. Сервер отвечает, данные загружены.", "t-ok");
 })();
 </script>
 </body>
