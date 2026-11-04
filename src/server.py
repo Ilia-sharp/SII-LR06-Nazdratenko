@@ -121,6 +121,36 @@ def _manifest_or_none() -> dict | None:
         return None
 
 
+HISTORY_FILE = LIVE_DIR / "history.json"
+HISTORY_LIMIT = 40
+_history_lock = threading.Lock()
+
+
+def _load_history() -> list[dict]:
+    """Читает историю живых генераций; битый файл не роняет сайт."""
+    try:
+        data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    return data if isinstance(data, list) else []
+
+
+def _record_history(record: dict) -> None:
+    """Дописывает результат генерации в data/live/history.json (свежие сверху)."""
+    with _history_lock:
+        items = [i for i in _load_history() if i.get("file") != record.get("file")]
+        items.insert(0, record)
+        items = items[:HISTORY_LIMIT]
+        try:
+            LIVE_DIR.mkdir(parents=True, exist_ok=True)
+            tmp = HISTORY_FILE.with_name("history.json.tmp")
+            tmp.write_text(json.dumps(items, ensure_ascii=False, indent=2),
+                           encoding="utf-8")
+            tmp.replace(HISTORY_FILE)
+        except Exception:  # noqa: BLE001 — история не должна ломать генерацию
+            pass
+
+
 def _pick_mode(prompt: str, requested: str) -> str | None:
     """Выбирает фактический режим генерации."""
     manifest = _manifest_or_none()
@@ -244,13 +274,69 @@ def live_images() -> dict:
     """Изображения, сгенерированные прямо из веб-интерфейса."""
     result = []
     if LIVE_DIR.exists():
-        for p in sorted(LIVE_DIR.glob("*.png"), key=lambda x: x.name, reverse=True)[:12]:
+        for p in sorted(LIVE_DIR.iterdir(), key=lambda x: x.stat().st_mtime,
+                        reverse=True):
+            if p.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+                continue
             result.append({
                 "file": p.name,
                 "url": f"/api/live-images/{p.name}",
                 "size_bytes": p.stat().st_size,
             })
-    return {"count": len(result), "items": result}
+    return {"count": len(result), "items": result[:12]}
+
+
+@app.get("/api/history")
+def history(limit: int = 24) -> dict:
+    """История картинок: живые генерации (свежие сверху), затем архив."""
+    limit = max(1, min(int(limit or 24), HISTORY_LIMIT + 20))
+    items: list[dict] = []
+    seen: set[str] = set()
+
+    for record in _load_history():
+        name = record.get("file")
+        if not name or name in seen or not (LIVE_DIR / name).is_file():
+            continue
+        seen.add(name)
+        items.append({
+            **record,
+            "url": f"/api/live-images/{name}",
+            "source": "live",
+        })
+
+    # Старые картинки без записи в истории — подхватываем по времени файла.
+    if LIVE_DIR.exists():
+        for p in sorted(LIVE_DIR.iterdir(), key=lambda x: x.stat().st_mtime,
+                        reverse=True):
+            if p.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+                continue
+            if p.name in seen:
+                continue
+            seen.add(p.name)
+            stamp = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(p.stat().st_mtime))
+            items.append({
+                "file": p.name,
+                "url": f"/api/live-images/{p.name}",
+                "prompt": "",
+                "seed": None,
+                "model": "",
+                "created_at": stamp,
+                "size_bytes": p.stat().st_size,
+                "source": "live",
+            })
+
+    manifest = _manifest_or_none()
+    for item in (manifest or {}).get("items", []):
+        name = item.get("file")
+        if not name or not (OUT_DIR / name).is_file():
+            continue
+        items.append({
+            **item,
+            "url": f"/api/images/{name}",
+            "source": "archive",
+        })
+
+    return {"count": len(items[:limit]), "items": items[:limit]}
 
 
 @app.get("/api/images/{name}")
@@ -415,6 +501,13 @@ def _real_stream(req: GenerateRequest):
                 "width": WIDTH, "height": HEIGHT,
                 "size_bytes": path.stat().st_size,
             })
+            _record_history({
+                "file": fname, "prompt": req.prompt, "seed": req.seed,
+                "model": MODEL_ID, "mode": "real",
+                "elapsed_sec": round(elapsed, 2),
+                "width": WIDTH, "height": HEIGHT,
+                "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            })
             events.put({"type": "end", "count": 1})
         except Exception as exc:  # noqa: BLE001
             events.put({"type": "error",
@@ -436,16 +529,21 @@ def _real_stream(req: GenerateRequest):
 
 
 def _to_jpeg(raw: bytes, upscale_to: int = 0, quality: int = 92,
-             sharpen: bool = False) -> bytes:
+             sharpen: bool = False, crop_bottom: int = 0) -> bytes:
     """Переводит ответ модели (webp/png) в качественный JPEG.
 
-    ``sharpen`` добавляет лёгкий unsharp mask — убирает «мыло» у резервного
-    канала. ``upscale_to`` — мягкий Lanczos-апскейл, если нужно.
+    ``crop_bottom`` срезает полосу с водяным знаком у резервного канала,
+    ``sharpen`` добавляет лёгкий unsharp mask — убирает «мыло».
+    ``upscale_to`` — мягкий Lanczos-апскейл, если нужно.
     """
     from PIL import Image, ImageFilter
 
     with Image.open(io.BytesIO(raw)) as img:
         rgb = img.convert("RGB")
+        if crop_bottom and rgb.height > crop_bottom + 32:
+            w, h = rgb.size
+            rgb = rgb.crop((0, 0, w, h - crop_bottom)).resize((w, h), Image.LANCZOS)
+            sharpen = True
         if upscale_to and rgb.width < upscale_to:
             rgb = rgb.resize((upscale_to, upscale_to), Image.LANCZOS)
             sharpen = True
@@ -636,7 +734,7 @@ def _cloud_stream(req: GenerateRequest):
         label = "Flux · резерв"
         width = height = CLOUD_SIZE
         ext = "jpg"
-        data = _to_jpeg(data, sharpen=True)
+        data = _to_jpeg(data, sharpen=True, crop_bottom=34)
     else:
         ext = "jpg"
 
@@ -644,11 +742,20 @@ def _cloud_stream(req: GenerateRequest):
     fname = f"cloud_{time.strftime('%Y%m%d-%H%M%S')}.{ext}"
     (LIVE_DIR / fname).write_bytes(data)
 
+    elapsed = round(time.perf_counter() - t0, 2)
+    _record_history({
+        "file": fname, "prompt": req.prompt, "seed": req.seed,
+        "model": label, "mode": "cloud",
+        "elapsed_sec": elapsed,
+        "width": width, "height": height,
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    })
+
     yield _sse({
         "type": "result", "mode": "cloud", "model": label, "file": fname,
         "url": f"/api/live-images/{fname}",
         "prompt": req.prompt, "seed": req.seed,
-        "elapsed_sec": round(time.perf_counter() - t0, 2),
+        "elapsed_sec": elapsed,
         "width": width, "height": height,
         "size_bytes": len(data),
     })

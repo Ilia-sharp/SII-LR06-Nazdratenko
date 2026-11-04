@@ -225,3 +225,29 @@ def test_to_jpeg_upscales_fallback():
     out = Image.open(io.BytesIO(_to_jpeg(src.getvalue(), upscale_to=128)))
     assert out.size == (128, 128)
     assert out.format == "JPEG"
+
+
+def test_to_jpeg_crops_watermark_strip():
+    """У резервного канала срезается нижняя полоса с логотипом."""
+    import io
+    from src.server import _to_jpeg
+    src = io.BytesIO()
+    Image.new("RGB", (96, 96), (30, 60, 90)).save(src, format="PNG")
+    out = Image.open(io.BytesIO(_to_jpeg(src.getvalue(), crop_bottom=16)))
+    assert out.size == (96, 96)
+
+
+def test_history_newest_first_and_dedup(tmp_path, monkeypatch):
+    """История хранит свежие записи сверху и не дублирует файл."""
+    from src import server
+
+    monkeypatch.setattr(server, "LIVE_DIR", tmp_path)
+    monkeypatch.setattr(server, "HISTORY_FILE", tmp_path / "history.json")
+
+    server._record_history({"file": "a.jpg", "prompt": "old"})
+    server._record_history({"file": "b.jpg", "prompt": "new"})
+    server._record_history({"file": "a.jpg", "prompt": "updated"})
+
+    items = server._load_history()
+    assert [i["file"] for i in items] == ["a.jpg", "b.jpg"]
+    assert items[0]["prompt"] == "updated"
