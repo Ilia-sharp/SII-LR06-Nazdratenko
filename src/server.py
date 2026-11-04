@@ -68,6 +68,16 @@ CLOUD_URL = (
     "?width={w}&height={h}&seed={s}&model={m}&nologo=true"
 )
 
+# Основная живая модель — FLUX.1-schnell на публичном Hugging Face Space.
+# Он отдаёт 1024×1024 без водяного знака; Pollinations остаётся резервом.
+HF_SPACE = os.environ.get("HF_SPACE", "black-forest-labs-flux-1-schnell")
+HF_SIZE = int(os.environ.get("HF_SIZE", "1024"))
+HF_STEPS = int(os.environ.get("HF_STEPS", "4"))
+HF_START_TIMEOUT = int(os.environ.get("HF_START_TIMEOUT", "45"))
+HF_WAIT_TIMEOUT = int(os.environ.get("HF_WAIT_TIMEOUT", "300"))
+HF_API = f"https://{HF_SPACE}.hf.space/gradio_api"
+HF_TOKEN = os.environ.get("HF_TOKEN", "").strip()
+
 DOC_FILES: dict[str, Path] = {
     "model_card": ROOT / "MODEL_CARD.md",
     "architecture": ROOT / "ARCHITECTURE.md",
@@ -425,6 +435,92 @@ def _real_stream(req: GenerateRequest):
             break
 
 
+def _to_jpeg(raw: bytes, upscale_to: int = 0, quality: int = 92,
+             sharpen: bool = False) -> bytes:
+    """Переводит ответ модели (webp/png) в качественный JPEG.
+
+    ``sharpen`` добавляет лёгкий unsharp mask — убирает «мыло» у резервного
+    канала. ``upscale_to`` — мягкий Lanczos-апскейл, если нужно.
+    """
+    from PIL import Image, ImageFilter
+
+    with Image.open(io.BytesIO(raw)) as img:
+        rgb = img.convert("RGB")
+        if upscale_to and rgb.width < upscale_to:
+            rgb = rgb.resize((upscale_to, upscale_to), Image.LANCZOS)
+            sharpen = True
+        if sharpen:
+            rgb = rgb.filter(ImageFilter.UnsharpMask(radius=1.2, percent=110, threshold=3))
+        buf = io.BytesIO()
+        rgb.save(buf, format="JPEG", quality=quality, optimize=True)
+        return buf.getvalue()
+
+
+def _hf_flux_image(prompt: str, seed: int, size: int, steps: int) -> bytes:
+    """FLUX.1-schnell через публичный Hugging Face Space (1024 px, без логотипа).
+
+    Gradio-API: сначала POST создаёт задачу, затем SSE-поток присылает
+    готовый файл. Таймауты разделены: короткий на постановку задачи и
+    длинный на ожидание GPU-очереди.
+    """
+    payload = {
+        "data": [
+            prompt,
+            int(seed) % 2147483647,
+            True,
+            int(size),
+            int(size),
+            int(steps),
+        ]
+    }
+    request = urllib.request.Request(
+        f"{HF_API}/call/infer",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "sii-lr06/1.3 (+https://github.com/Ilia-sharp/SII-LR06-Nazdratenko)",
+            **({"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}),
+        },
+    )
+    with urllib.request.urlopen(request, timeout=HF_START_TIMEOUT) as resp:
+        started = json.loads(resp.read().decode("utf-8"))
+
+    event_id = started.get("event_id")
+    if not event_id:
+        raise RuntimeError("FLUX Space не вернул event_id")
+
+    file_url = None
+    saw_error = False
+    with urllib.request.urlopen(
+        f"{HF_API}/call/infer/{event_id}", timeout=HF_WAIT_TIMEOUT
+    ) as stream:
+        for raw_line in stream:
+            line = raw_line.decode("utf-8", "replace").strip()
+            if line == "event: error":
+                saw_error = True
+                continue
+            if not line.startswith("data:"):
+                continue
+            try:
+                chunk = json.loads(line[5:].strip())
+            except json.JSONDecodeError:
+                continue
+            for item in chunk if isinstance(chunk, list) else [chunk]:
+                if isinstance(item, dict) and item.get("url"):
+                    file_url = item["url"]
+
+    if not file_url:
+        raise RuntimeError(
+            "бесплатная квота FLUX исчерпана" if saw_error
+            else "FLUX Space не вернул изображение"
+        )
+    with urllib.request.urlopen(file_url, timeout=HF_START_TIMEOUT) as resp:
+        raw = resp.read()
+    if len(raw) < 5000:
+        raise RuntimeError("FLUX Space вернул пустой файл")
+    return raw
+
+
 def _retry_after_seconds(value: str | None, default: int = 45) -> int:
     """Сколько секунд ждать до следующего бесплатного слота pollinations."""
     try:
@@ -435,78 +531,92 @@ def _retry_after_seconds(value: str | None, default: int = 45) -> int:
 
 
 def _cloud_stream(req: GenerateRequest):
-    """Демо-генерация через публичный API pollinations.ai (Flux, 768 px).
-
-    Бесплатный API пускает одну картинку примерно раз в 45 секунд и отвечает
-    402 с заголовком Retry-After. Вместо ошибки ждём этот слот и повторяем —
-    так повторная генерация на сайте не падает.
-    """
-    yield _sse({"type": "meta", "mode": "cloud", "model_id": "flux (pollinations.ai)",
-                "steps": None, "width": CLOUD_SIZE, "height": CLOUD_SIZE,
-                "note": "Локальный инференс недоступен — облачный демо-режим Flux"})
+    """Живая генерация: FLUX.1-schnell на HF Space, резерв — pollinations.ai."""
+    yield _sse({"type": "meta", "mode": "cloud",
+                "model_id": "FLUX.1-schnell",
+                "steps": HF_STEPS, "width": HF_SIZE, "height": HF_SIZE,
+                "note": "Живая генерация FLUX.1-schnell"})
     yield _sse({"type": "stage", "stage": "cloud",
-                "message": "Облачная генерация Flux…"})
+                "message": f"FLUX.1-schnell · {HF_SIZE} px…"})
 
-    q = urllib.parse.quote(req.prompt, safe="")
-    url = CLOUD_URL.format(q=q, w=CLOUD_SIZE, h=CLOUD_SIZE,
-                           s=req.seed, m=CLOUD_MODEL)
     t0 = time.perf_counter()
-    data, ctype, last_error = b"", "", "нет ответа"
-    for attempt in range(1, CLOUD_RETRIES + 2):
-        wait = 0
-        try:
-            request = urllib.request.Request(url, headers={
-                "User-Agent": "sii-lr06/1.2 (+https://github.com/Ilia-sharp/SII-LR06-Nazdratenko)",
-                "Accept": "image/*",
-            })
-            with urllib.request.urlopen(request, timeout=CLOUD_TIMEOUT) as resp:
-                ctype = (resp.headers.get("Content-Type") or "").lower()
-                data = resp.read()
-            if ctype.startswith("image/") and len(data) > 5000:
-                break
-            last_error = f"неожиданный ответ ({ctype or 'без типа'}, {len(data)} байт)"
-            data = b""
-        except urllib.error.HTTPError as exc:
-            data = b""
-            if exc.code == 402:
-                wait = _retry_after_seconds(exc.headers.get("Retry-After"))
-                last_error = "бесплатный лимит API (одна картинка в 45 секунд)"
-            elif exc.code == 429:
-                wait = _retry_after_seconds(exc.headers.get("Retry-After"), 30)
-                last_error = "слишком много запросов к API"
-            else:
-                last_error = f"HTTP {exc.code} {exc.reason}"
-        except Exception as exc:  # noqa: BLE001
-            last_error = str(exc)
-            data = b""
+    data = b""
+    label = "FLUX.1-schnell"
+    width = height = HF_SIZE
 
-        if attempt <= CLOUD_RETRIES:
-            if wait:
-                yield _sse({"type": "stage", "stage": "cloud",
-                            "message": f"Свободный слот API через {wait} с — ждём…"})
-                time.sleep(wait + 1)
-            else:
-                yield _sse({"type": "stage", "stage": "cloud",
-                            "message": f"Повтор запроса {attempt} из {CLOUD_RETRIES}…"})
-                time.sleep(2)
+    try:
+        raw = _hf_flux_image(req.prompt, req.seed, HF_SIZE, HF_STEPS)
+        data = _to_jpeg(raw)
+    except Exception as exc:  # noqa: BLE001 — переходим на резервный канал
+        yield _sse({"type": "stage", "stage": "cloud",
+                    "message": f"FLUX Space занят — резервный канал ({exc})…"})
 
     if not data:
-        yield _sse({"type": "error",
-                    "message": f"Облачный генератор не ответил: {last_error}"})
-        yield _sse({"type": "end", "count": 0})
-        return
+        q = urllib.parse.quote(req.prompt, safe="")
+        url = CLOUD_URL.format(q=q, w=CLOUD_SIZE, h=CLOUD_SIZE,
+                               s=req.seed, m=CLOUD_MODEL)
+        data, ctype, last_error = b"", "", "нет ответа"
+        for attempt in range(1, CLOUD_RETRIES + 2):
+            wait = 0
+            try:
+                request = urllib.request.Request(url, headers={
+                    "User-Agent": "sii-lr06/1.3 (+https://github.com/Ilia-sharp/SII-LR06-Nazdratenko)",
+                    "Accept": "image/*",
+                })
+                with urllib.request.urlopen(request, timeout=CLOUD_TIMEOUT) as resp:
+                    ctype = (resp.headers.get("Content-Type") or "").lower()
+                    data = resp.read()
+                if ctype.startswith("image/") and len(data) > 5000:
+                    break
+                last_error = f"неожиданный ответ ({ctype or 'без типа'}, {len(data)} байт)"
+                data = b""
+            except urllib.error.HTTPError as exc:
+                data = b""
+                if exc.code == 402:
+                    wait = _retry_after_seconds(exc.headers.get("Retry-After"))
+                    last_error = "бесплатный лимит API (одна картинка в 45 секунд)"
+                elif exc.code == 429:
+                    wait = _retry_after_seconds(exc.headers.get("Retry-After"), 30)
+                    last_error = "слишком много запросов к API"
+                else:
+                    last_error = f"HTTP {exc.code} {exc.reason}"
+            except Exception as exc:  # noqa: BLE001
+                last_error = str(exc)
+                data = b""
+
+            if attempt <= CLOUD_RETRIES:
+                if wait:
+                    yield _sse({"type": "stage", "stage": "cloud",
+                                "message": f"Свободный слот API через {wait} с — ждём…"})
+                    time.sleep(wait + 1)
+                else:
+                    yield _sse({"type": "stage", "stage": "cloud",
+                                "message": f"Повтор запроса {attempt} из {CLOUD_RETRIES}…"})
+                    time.sleep(2)
+
+        if not data:
+            yield _sse({"type": "error",
+                        "message": f"Облачный генератор не ответил: {last_error}"})
+            yield _sse({"type": "end", "count": 0})
+            return
+
+        label = "Flux · резерв"
+        width = height = CLOUD_SIZE
+        ext = "jpg"
+        data = _to_jpeg(data, sharpen=True)
+    else:
+        ext = "jpg"
 
     LIVE_DIR.mkdir(parents=True, exist_ok=True)
-    ext = "jpg" if "jpeg" in ctype or "jpg" in ctype else "png"
     fname = f"cloud_{time.strftime('%Y%m%d-%H%M%S')}.{ext}"
     (LIVE_DIR / fname).write_bytes(data)
 
     yield _sse({
-        "type": "result", "mode": "cloud", "file": fname,
+        "type": "result", "mode": "cloud", "model": label, "file": fname,
         "url": f"/api/live-images/{fname}",
         "prompt": req.prompt, "seed": req.seed,
         "elapsed_sec": round(time.perf_counter() - t0, 2),
-        "width": CLOUD_SIZE, "height": CLOUD_SIZE,
+        "width": width, "height": height,
         "size_bytes": len(data),
     })
     yield _sse({"type": "end", "count": 1})

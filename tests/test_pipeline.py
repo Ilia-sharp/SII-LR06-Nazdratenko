@@ -214,3 +214,14 @@ def test_cloud_retry_after_parsing():
     assert _retry_after_seconds("not-a-number") == 45
     assert _retry_after_seconds("1000") == 90
     assert _retry_after_seconds("0") == 1
+
+
+def test_to_jpeg_upscales_fallback():
+    """Резервный канал 768 px апскейлится до размера живого FLUX."""
+    import io
+    from src.server import _to_jpeg
+    src = io.BytesIO()
+    Image.new("RGB", (64, 64), (120, 90, 60)).save(src, format="PNG")
+    out = Image.open(io.BytesIO(_to_jpeg(src.getvalue(), upscale_to=128)))
+    assert out.size == (128, 128)
+    assert out.format == "JPEG"

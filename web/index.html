@@ -81,11 +81,17 @@ textarea:focus{outline:none;border-color:var(--line-2);box-shadow:0 0 0 3px rgba
 #canvas[hidden]{display:none}
 .stage-empty{position:absolute;inset:0;display:grid;place-items:center;padding:30px;text-align:center;color:var(--muted);font-size:13.5px;background:repeating-linear-gradient(45deg,#EFEBE2,#EFEBE2 12px,#ECE7DD 12px,#ECE7DD 24px)}
 .stage-empty[hidden]{display:none}
-.overlay{position:absolute;left:14px;right:14px;bottom:14px;display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:999px;background:rgba(20,18,15,.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#F6F1E9;font-size:12.5px;transition:opacity .3s}
+.overlay{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:16px;background:linear-gradient(180deg,rgba(20,18,15,0) 35%,rgba(20,18,15,.55));transition:opacity .3s}
 .overlay[hidden]{display:none;opacity:0}
-.overlay .pulse{width:7px;height:7px;border-radius:50%;background:#F0B49B;animation:pulse 1s ease-in-out infinite;flex:none}
-@keyframes pulse{50%{opacity:.35}}
-.overlay .pct{margin-left:auto;font-variant-numeric:tabular-nums;opacity:.8}
+.loader{width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:rgba(20,18,15,.84);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#F6F1E9;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.spinner{width:18px;height:18px;border-radius:50%;border:2px solid rgba(246,241,233,.25);border-top-color:#F0B49B;animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-text{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.loader-text b{font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.loader-text small{font-size:11.5px;color:#C9C1B4;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.loader .pct{font-variant-numeric:tabular-nums;color:#C9C1B4;font-size:12px;flex:none}
+.btn-cancel{border:1px solid rgba(246,241,233,.3);background:transparent;color:#F6F1E9;border-radius:999px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s;flex:none}
+.btn-cancel:hover{background:rgba(246,241,233,.14);border-color:rgba(246,241,233,.55)}
 .progress{height:2px;background:var(--line);border-radius:99px;overflow:hidden}
 .progress-bar{height:100%;width:0;background:var(--accent);transition:width .4s ease}
 .progress[hidden]{display:none}
@@ -166,9 +172,15 @@ dialog pre{margin:0;padding:20px 22px 24px;overflow:auto;max-height:calc(80vh - 
         <canvas id="canvas" width="512" height="512"></canvas>
         <div class="stage-empty" id="stage-empty">Галерея появится после прогона</div>
         <div class="overlay" id="overlay" hidden>
-          <span class="pulse"></span>
-          <span id="overlay-text">Генерация…</span>
-          <span class="pct" id="overlay-pct">0%</span>
+          <div class="loader">
+            <span class="spinner"></span>
+            <span class="loader-text">
+              <b id="overlay-text">Генерация…</b>
+              <small id="overlay-hint">FLUX.1-schnell · 1024 × 1024</small>
+            </span>
+            <span class="pct" id="overlay-pct">0%</span>
+            <button class="btn-cancel" id="cancel" type="button">Отменить</button>
+          </div>
         </div>
       </div>
     </div>
@@ -208,7 +220,8 @@ function randomSeed() {
 
 const preview = $("#preview"), canvas = $("#canvas"), ctx = canvas.getContext("2d");
 let prompts = [], scenes = [], activeScene = 0, running = false, t0 = 0, timerId = null;
-let lastPreview = null, currentPrompt = "";
+let creepId = null, controller = null, progressValue = 0;
+let lastPreview = null, currentPrompt = "", lastGood = null;
 
 /* ── Шум и превью ─────────────────────────────────────────────────────── */
 function noise() {
@@ -249,22 +262,38 @@ function note(text, kind) {
 }
 function startTimer() {
   t0 = performance.now();
+  progressValue = 0.02;
   timerId = setInterval(() => {
     $("#readout-meta").textContent = ((performance.now() - t0) / 1000).toFixed(1) + " с";
   }, 100);
+  creepId = setInterval(() => {
+    if (progressValue < 0.9) {
+      progressValue = Math.min(0.9, progressValue + 0.008);
+      $("#bar").style.width = Math.round(progressValue * 100) + "%";
+      $("#overlay-pct").textContent = Math.round(progressValue * 100) + "%";
+    }
+  }, 400);
 }
-function stopTimer() { clearInterval(timerId); timerId = null; }
+function stopTimer() {
+  clearInterval(timerId); timerId = null;
+  clearInterval(creepId); creepId = null;
+}
 
 function setProgress(p) {
+  progressValue = p;
   $("#bar").style.width = Math.min(100, Math.round(p * 100)) + "%";
   $("#overlay-pct").textContent = Math.min(100, Math.round(p * 100)) + "%";
 }
-function overlay(text) {
+function bump(p) {
+  if (p > progressValue) setProgress(p);
+}
+function overlay(text, hint) {
   const el = $("#overlay");
   if (text === null) { el.hidden = true; $("#progress").hidden = true; return; }
   el.hidden = false;
   $("#progress").hidden = false;
   $("#overlay-text").textContent = text;
+  if (hint) $("#overlay-hint").textContent = hint;
 }
 
 /* ── Данные ───────────────────────────────────────────────────────────── */
@@ -337,6 +366,7 @@ function selectScene(idx) {
   $("#caption").textContent = it.prompt;
   $("#readout-meta").textContent = `архив · seed ${it.seed ?? 116} · ${(it.elapsed_sec || 0).toFixed(1)} с`;
   $("#fine").textContent = `Архив · SD-Turbo · seed ${it.seed ?? 116} · 512 × 512`;
+  lastGood = {src: it.url, meta: $("#readout-meta").textContent, fine: $("#fine").textContent};
 }
 
 $("#prompt").addEventListener("input", () => {
@@ -365,19 +395,21 @@ async function generate() {
   btn.disabled = true;
   btn.innerHTML = "<span class=\"dot\"></span>Генерирую…";
   note("Запрос отправлен…");
-  overlay("Генерация…");
+  overlay("Готовим модель…", "FLUX.1-schnell · 1024 × 1024");
   setProgress(0);
   startTimer();
   lastPreview = null;
   showCanvas(true);
   $("#caption").textContent = prompt;
 
+  controller = new AbortController();
   try {
     const seed = randomSeed();
     const res = await fetch("/api/generate", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({prompt, seed, mode: "auto"})
+      body: JSON.stringify({prompt, seed, mode: "auto"}),
+      signal: controller.signal
     });
     if (!res.ok) {
       let msg = `HTTP ${res.status}`;
@@ -400,11 +432,16 @@ async function generate() {
       }
     }
   } catch (err) {
-    note("Не получилось: " + err.message, "err");
+    if (err && err.name === "AbortError") {
+      note("Генерация отменена", "");
+    } else {
+      note("Не получилось: " + err.message, "err");
+    }
     overlay(null);
-    paintLastScene();
+    restoreLast();
   } finally {
     running = false;
+    controller = null;
     stopTimer();
     btn.disabled = false;
     btn.innerHTML = "<span class=\"dot\"></span>Сгенерировать";
@@ -420,19 +457,33 @@ function paintLastScene() {
   $("#readout-meta").textContent = `seed ${it.seed ?? 116}`;
 }
 
+function restoreLast() {
+  if (!lastGood) { paintLastScene(); return; }
+  preview.src = lastGood.src;
+  preview.hidden = false;
+  canvas.hidden = true;
+  $("#stage-empty").hidden = true;
+  $("#readout-meta").textContent = lastGood.meta;
+  $("#fine").textContent = lastGood.fine;
+}
+
 function handleEvent(ev) {
   switch (ev.type) {
     case "meta":
       note(ev.note || "Генерация…");
+      if (ev.model_id) {
+        const size = ev.width && ev.height ? `${ev.width} × ${ev.height}` : "";
+        overlay("Готовим модель…", [ev.model_id, size].filter(Boolean).join(" · "));
+      }
       break;
 
     case "stage":
       if (ev.message) overlay(ev.message);
-      if (ev.stage === "load") setProgress(.08);
-      if (ev.stage === "encode") setProgress(.16);
-      if (ev.stage === "vae") setProgress(.92);
-      if (ev.stage === "save") setProgress(.97);
-      if (ev.stage === "cloud") setProgress(.2);
+      if (ev.stage === "load") bump(.08);
+      if (ev.stage === "encode") bump(.16);
+      if (ev.stage === "vae") bump(.92);
+      if (ev.stage === "save") bump(.97);
+      if (ev.stage === "cloud") bump(.2);
       break;
 
     case "step": {
@@ -463,14 +514,20 @@ function handleEvent(ev) {
       const seed = Number.isFinite(ev.seed) ? ev.seed : "—";
       const dims = ev.width && ev.height ? `${ev.width} × ${ev.height}` : "";
       $("#readout-meta").textContent = `${MODE_RU[ev.mode] || ev.mode} · seed ${seed} · ${secs}`;
+      const modelName = ev.model || (ev.mode === "cloud" ? "FLUX.1-schnell" : "SD-Turbo");
       if (ev.mode === "replay") {
         $("#fine").textContent = `Архив · SD-Turbo · seed ${seed} · ${dims || "512 × 512"}`;
       } else if (ev.mode === "cloud") {
-        $("#fine").textContent = `Flux · seed ${seed} · ${dims} · облако`;
+        $("#fine").textContent = `${modelName} · seed ${seed} · ${dims} · облако`;
       } else {
-        $("#fine").textContent = `SD-Turbo · seed ${seed} · ${dims}`;
+        $("#fine").textContent = `${modelName} · seed ${seed} · ${dims}`;
       }
-      note(`Готово · ${secs} · ${MODE_RU[ev.mode] || ev.mode} · seed ${seed}`, "ok");
+      note(`Готово · ${secs} · ${modelName} · seed ${seed}`, "ok");
+      lastGood = {
+        src: ev.url,
+        meta: $("#readout-meta").textContent,
+        fine: $("#fine").textContent
+      };
       break;
     }
 
@@ -487,6 +544,10 @@ function handleEvent(ev) {
 }
 
 $("#generate").addEventListener("click", generate);
+
+$("#cancel").addEventListener("click", () => {
+  if (controller) { note("Отменяю…", ""); controller.abort(); }
+});
 
 /* ── Манифест ─────────────────────────────────────────────────────────── */
 $("#manifest-open").addEventListener("click", () => $("#manifest-dialog").showModal());
