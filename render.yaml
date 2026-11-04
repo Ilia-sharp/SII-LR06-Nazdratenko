@@ -15,3 +15,7 @@ services:
         value: "3.12.6"
       - key: ENABLE_REAL_GEN
         value: "0"
+      # Токен Hugging Face (read) — вставляется вручную в Render → Environment.
+      # С ним FLUX.1-schnell идёт от вашего аккаунта с его квотой.
+      - key: HF_TOKEN
+        sync: false
