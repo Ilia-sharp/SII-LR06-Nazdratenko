@@ -456,6 +456,30 @@ def _to_jpeg(raw: bytes, upscale_to: int = 0, quality: int = 92,
         return buf.getvalue()
 
 
+def _hf_inference_image(prompt: str, seed: int, size: int, steps: int) -> bytes:
+    """FLUX.1-schnell через Hugging Face Inference Providers (нужен HF_TOKEN).
+
+    Это основной путь, когда токен задан: без ZeroGPU-очереди и с квотой
+    аккаунта Hugging Face.
+    """
+    if not HF_TOKEN:
+        raise RuntimeError("HF_TOKEN не задан")
+    from huggingface_hub import InferenceClient
+
+    client = InferenceClient(token=HF_TOKEN, timeout=HF_WAIT_TIMEOUT)
+    image = client.text_to_image(
+        prompt,
+        model=HF_SPACE,
+        width=size,
+        height=size,
+        num_inference_steps=steps,
+        seed=int(seed) % 2147483647,
+    )
+    buf = io.BytesIO()
+    image.save(buf, format="PNG")
+    return buf.getvalue()
+
+
 def _hf_flux_image(prompt: str, seed: int, size: int, steps: int) -> bytes:
     """FLUX.1-schnell через публичный Hugging Face Space (1024 px, без логотипа).
 
@@ -544,12 +568,21 @@ def _cloud_stream(req: GenerateRequest):
     label = "FLUX.1-schnell"
     width = height = HF_SIZE
 
-    try:
-        raw = _hf_flux_image(req.prompt, req.seed, HF_SIZE, HF_STEPS)
-        data = _to_jpeg(raw)
-    except Exception as exc:  # noqa: BLE001 — переходим на резервный канал
-        yield _sse({"type": "stage", "stage": "cloud",
-                    "message": f"FLUX Space занят — резервный канал ({exc})…"})
+    if HF_TOKEN:
+        try:
+            raw = _hf_inference_image(req.prompt, req.seed, HF_SIZE, HF_STEPS)
+            data = _to_jpeg(raw)
+        except Exception as exc:  # noqa: BLE001 — пробуем Space
+            yield _sse({"type": "stage", "stage": "cloud",
+                        "message": f"HF Inference недоступен — пробуем FLUX Space ({exc})…"})
+
+    if not data:
+        try:
+            raw = _hf_flux_image(req.prompt, req.seed, HF_SIZE, HF_STEPS)
+            data = _to_jpeg(raw)
+        except Exception as exc:  # noqa: BLE001 — переходим на резервный канал
+            yield _sse({"type": "stage", "stage": "cloud",
+                        "message": f"FLUX Space занят — резервный канал ({exc})…"})
 
     if not data:
         q = urllib.parse.quote(req.prompt, safe="")
