@@ -34,6 +34,16 @@ def torch_available() -> bool:
         return False
 
 
+def real_available() -> bool:
+    """True, если есть всё для локального инференса: torch + diffusers."""
+    try:
+        import diffusers  # noqa: F401
+        import torch  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
 def get_device() -> str:
     """Выбирает устройство инференса: cuda → mps → cpu."""
     import torch

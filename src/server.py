@@ -27,6 +27,7 @@ import queue
 import re
 import threading
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -48,7 +49,7 @@ from src.config import (
     WIDTH,
 )
 from src.manifest import add_item, load_manifest, new_manifest, save_manifest
-from src.model import torch_available
+from src.model import real_available, torch_available
 from src.prompts import read_prompts
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -61,10 +62,10 @@ ENABLE_REAL_GEN = os.environ.get("ENABLE_REAL_GEN", "1") == "1"
 CLOUD_TIMEOUT = int(os.environ.get("CLOUD_TIMEOUT", "90"))
 CLOUD_RETRIES = int(os.environ.get("CLOUD_RETRIES", "2"))
 CLOUD_MODEL = os.environ.get("CLOUD_MODEL", "flux")
-CLOUD_SIZE = int(os.environ.get("CLOUD_SIZE", "1024"))
+CLOUD_SIZE = int(os.environ.get("CLOUD_SIZE", "768"))
 CLOUD_URL = (
     "https://image.pollinations.ai/prompt/{q}"
-    "?width={w}&height={h}&seed={s}&model={m}&nologo=true&enhance=true"
+    "?width={w}&height={h}&seed={s}&model={m}&nologo=true"
 )
 
 DOC_FILES: dict[str, Path] = {
@@ -117,7 +118,7 @@ def _pick_mode(prompt: str, requested: str) -> str | None:
         item.get("prompt") == prompt for item in manifest.get("items", [])
     ))
 
-    real_ok = ENABLE_REAL_GEN and torch_available()
+    real_ok = ENABLE_REAL_GEN and real_available()
 
     if requested == "replay":
         return "replay" if manifest else None
@@ -152,6 +153,7 @@ def favicon() -> Response:
 def health() -> dict:
     """Проверка живости сервера (используется health-check'ом Render)."""
     torch_ok = torch_available()
+    real_ok = real_available()
     return {
         "status": "ok",
         "variant": VARIANT,
@@ -159,7 +161,7 @@ def health() -> dict:
         "enable_real_gen": ENABLE_REAL_GEN,
         "modes": {
             "replay": _manifest_or_none() is not None,
-            "real": ENABLE_REAL_GEN and torch_ok,
+            "real": ENABLE_REAL_GEN and real_ok,
             "cloud": True,
         },
     }
@@ -423,8 +425,22 @@ def _real_stream(req: GenerateRequest):
             break
 
 
+def _retry_after_seconds(value: str | None, default: int = 45) -> int:
+    """Сколько секунд ждать до следующего бесплатного слота pollinations."""
+    try:
+        seconds = int(str(value or "").strip())
+    except ValueError:
+        return default
+    return max(1, min(seconds, 90))
+
+
 def _cloud_stream(req: GenerateRequest):
-    """Демо-генерация через публичный API pollinations.ai (Flux, 1024 px)."""
+    """Демо-генерация через публичный API pollinations.ai (Flux, 768 px).
+
+    Бесплатный API пускает одну картинку примерно раз в 45 секунд и отвечает
+    402 с заголовком Retry-After. Вместо ошибки ждём этот слот и повторяем —
+    так повторная генерация на сайте не падает.
+    """
     yield _sse({"type": "meta", "mode": "cloud", "model_id": "flux (pollinations.ai)",
                 "steps": None, "width": CLOUD_SIZE, "height": CLOUD_SIZE,
                 "note": "Локальный инференс недоступен — облачный демо-режим Flux"})
@@ -437,9 +453,10 @@ def _cloud_stream(req: GenerateRequest):
     t0 = time.perf_counter()
     data, ctype, last_error = b"", "", "нет ответа"
     for attempt in range(1, CLOUD_RETRIES + 2):
+        wait = 0
         try:
             request = urllib.request.Request(url, headers={
-                "User-Agent": "sii-lr06/1.1 (+https://github.com/Ilia-sharp/SII-LR06-Nazdratenko)",
+                "User-Agent": "sii-lr06/1.2 (+https://github.com/Ilia-sharp/SII-LR06-Nazdratenko)",
                 "Accept": "image/*",
             })
             with urllib.request.urlopen(request, timeout=CLOUD_TIMEOUT) as resp:
@@ -449,13 +466,29 @@ def _cloud_stream(req: GenerateRequest):
                 break
             last_error = f"неожиданный ответ ({ctype or 'без типа'}, {len(data)} байт)"
             data = b""
+        except urllib.error.HTTPError as exc:
+            data = b""
+            if exc.code == 402:
+                wait = _retry_after_seconds(exc.headers.get("Retry-After"))
+                last_error = "бесплатный лимит API (одна картинка в 45 секунд)"
+            elif exc.code == 429:
+                wait = _retry_after_seconds(exc.headers.get("Retry-After"), 30)
+                last_error = "слишком много запросов к API"
+            else:
+                last_error = f"HTTP {exc.code} {exc.reason}"
         except Exception as exc:  # noqa: BLE001
             last_error = str(exc)
             data = b""
+
         if attempt <= CLOUD_RETRIES:
-            yield _sse({"type": "stage", "stage": "cloud",
-                        "message": f"Повтор запроса {attempt} из {CLOUD_RETRIES}…"})
-            time.sleep(1.5)
+            if wait:
+                yield _sse({"type": "stage", "stage": "cloud",
+                            "message": f"Свободный слот API через {wait} с — ждём…"})
+                time.sleep(wait + 1)
+            else:
+                yield _sse({"type": "stage", "stage": "cloud",
+                            "message": f"Повтор запроса {attempt} из {CLOUD_RETRIES}…"})
+                time.sleep(2)
 
     if not data:
         yield _sse({"type": "error",

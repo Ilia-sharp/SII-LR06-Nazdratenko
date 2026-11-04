@@ -196,3 +196,21 @@ def test_validate_run_with_manifest(tmp_path: Path):
     save_manifest(m, tmp_path)
     report = validate_run(tmp_path)
     assert report["ok"] and report["count"] == 1
+
+
+# ── облачный режим ─────────────────────────────────────────────────────────
+
+def test_cloud_url_without_enhance():
+    """enhance=true даёт 402 на бесплатном API — его быть не должно."""
+    from src.server import CLOUD_URL
+    assert "enhance=true" not in CLOUD_URL
+
+
+def test_cloud_retry_after_parsing():
+    """Retry-After читается безопасно и ограничен разумными рамками."""
+    from src.server import _retry_after_seconds
+    assert _retry_after_seconds("43") == 43
+    assert _retry_after_seconds(None) == 45
+    assert _retry_after_seconds("not-a-number") == 45
+    assert _retry_after_seconds("1000") == 90
+    assert _retry_after_seconds("0") == 1

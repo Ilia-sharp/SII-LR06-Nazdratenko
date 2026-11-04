@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Рабочее место · ЛР №6 · Наздратенко</title>
-<meta name="description" content="Лабораторная работа №6: генерация изображений рабочего места моделью SD-Turbo. Seed 116, 4 шага, живой прогресс и воспроизводимый манифест.">
+<meta name="description" content="Лабораторная работа №6: генерация изображений рабочего места. Облачная модель Flux со случайным seed, архивный прогон SD-Turbo и воспроизводимый манифест.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23F4F2EC'/%3E%3Ccircle cx='32' cy='32' r='13' fill='none' stroke='%23C6532D' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23C6532D'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -144,14 +144,14 @@ dialog pre{margin:0;padding:20px 22px 24px;overflow:auto;max-height:calc(80vh - 
   <section class="side">
     <p class="meta">Рабочее место · interior</p>
     <h1>Рабочее <em>место</em></h1>
-    <p class="sub">Опишите интерьер — SD-Turbo нарисует его за четыре шага.</p>
+    <p class="sub">Опишите интерьер — нарисуем новый вариант за пару секунд.</p>
 
     <label class="field-label" for="prompt">Промпт</label>
     <textarea id="prompt" maxlength="1500" spellcheck="false" placeholder="Свет, мебель, настроение…"></textarea>
 
     <button class="btn btn-main" id="generate" type="button"><span class="dot"></span>Сгенерировать</button>
     <p class="note" id="note">Выберите сцену или напишите свой промпт.</p>
-    <p class="fine">SD-Turbo · 4 шага · seed 116 · 512 × 512</p>
+    <p class="fine" id="fine">Архив · SD-Turbo · seed 116 · 512 × 512</p>
 
     <div class="scenes">
       <div class="scenes-head"><span>Сцены прогона</span><span>5</span></div>
@@ -175,7 +175,7 @@ dialog pre{margin:0;padding:20px 22px 24px;overflow:auto;max-height:calc(80vh - 
     <div class="progress" id="progress" hidden><div class="progress-bar" id="bar"></div></div>
     <div class="readout">
       <p id="caption">Промпт появится здесь</p>
-      <span id="readout-meta">seed 116</span>
+      <span id="readout-meta">архив · seed 116</span>
     </div>
   </section>
 </main>
@@ -197,6 +197,14 @@ const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 const LABELS = ["Уютное утро", "Минимализм", "Общежитие", "Лофт", "У окна"];
 const NUM = ["01", "02", "03", "04", "05"];
 const MODE_RU = {replay: "повтор прогона", real: "локальная генерация", cloud: "облако · flux"};
+
+/* Новый seed на каждую генерацию: один и тот же промпт даёт разные картинки. */
+function randomSeed() {
+  const a = new Uint32Array(1);
+  if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(a);
+  else a[0] = Math.floor(Math.random() * 4294967296);
+  return a[0] % 2147483647;
+}
 
 const preview = $("#preview"), canvas = $("#canvas"), ctx = canvas.getContext("2d");
 let prompts = [], scenes = [], activeScene = 0, running = false, t0 = 0, timerId = null;
@@ -327,7 +335,8 @@ function selectScene(idx) {
   $("#stage-empty").hidden = true;
   overlay(null);
   $("#caption").textContent = it.prompt;
-  $("#readout-meta").textContent = `seed ${it.seed ?? 116} · ${(it.elapsed_sec || 0).toFixed(1)} с`;
+  $("#readout-meta").textContent = `архив · seed ${it.seed ?? 116} · ${(it.elapsed_sec || 0).toFixed(1)} с`;
+  $("#fine").textContent = `Архив · SD-Turbo · seed ${it.seed ?? 116} · 512 × 512`;
 }
 
 $("#prompt").addEventListener("input", () => {
@@ -364,10 +373,11 @@ async function generate() {
   $("#caption").textContent = prompt;
 
   try {
+    const seed = randomSeed();
     const res = await fetch("/api/generate", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({prompt, seed: 116, mode: "auto"})
+      body: JSON.stringify({prompt, seed, mode: "auto"})
     });
     if (!res.ok) {
       let msg = `HTTP ${res.status}`;
@@ -450,8 +460,17 @@ function handleEvent(ev) {
       $("#stage-empty").hidden = true;
       $("#caption").textContent = ev.prompt || $("#caption").textContent;
       const secs = typeof ev.elapsed_sec === "number" ? ev.elapsed_sec.toFixed(1) + " с" : "—";
-      $("#readout-meta").textContent = `${MODE_RU[ev.mode] || ev.mode} · ${secs}`;
-      note(`Готово · ${secs} · ${MODE_RU[ev.mode] || ev.mode}`, "ok");
+      const seed = Number.isFinite(ev.seed) ? ev.seed : "—";
+      const dims = ev.width && ev.height ? `${ev.width} × ${ev.height}` : "";
+      $("#readout-meta").textContent = `${MODE_RU[ev.mode] || ev.mode} · seed ${seed} · ${secs}`;
+      if (ev.mode === "replay") {
+        $("#fine").textContent = `Архив · SD-Turbo · seed ${seed} · ${dims || "512 × 512"}`;
+      } else if (ev.mode === "cloud") {
+        $("#fine").textContent = `Flux · seed ${seed} · ${dims} · облако`;
+      } else {
+        $("#fine").textContent = `SD-Turbo · seed ${seed} · ${dims}`;
+      }
+      note(`Готово · ${secs} · ${MODE_RU[ev.mode] || ev.mode} · seed ${seed}`, "ok");
       break;
     }
 
