@@ -18,14 +18,11 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Зависимости (без torch — CI быстрый)
+      - name: Зависимости
         run: pip install -r requirements-dev.txt
 
       - name: Тесты
         run: pytest -q
 
-      - name: Проверки прогона (если outputs уже в репозитории)
-        run: python -m src.checks
-
-      - name: Импорт сервера (линт-проверка)
-        run: python -c "import src.server; print('server OK')"
+      - name: Проверка импорта пакета
+        run: python -c "import src.pipeline, src.api, src.cli; print('imports OK')"

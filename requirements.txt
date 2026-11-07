@@ -1,12 +1,4 @@
-# Полные зависимости: локальная генерация изображений (torch + diffusers).
-# Для веб-сервера без инференса см. requirements-web.txt (без torch — для Render Free).
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.14.1+cpu
-diffusers>=0.31
-transformers>=4.44
-accelerate>=0.34
-safetensors>=0.4
-huggingface_hub>=0.34
-Pillow>=10.0
-fastapi>=0.110
-uvicorn[standard]>=0.29
+pandas>=2.2,<4
+numpy>=1.26,<3
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1

@@ -1,25 +1,28 @@
-.PHONY: install install-web install-dev download-model generate checks test server
+# Воспроизводимые команды (Linux/macOS; на Windows команды те же).
 
-install:            ## полная установка (локальная генерация)
-	pip install -r requirements.txt
+PYTHON ?= python
+EVENTS ?= data/events.csv
+ARTIFACTS ?= artifacts
 
-install-web:        ## только веб-сервер без torch (Render Free)
-	pip install -r requirements-web.txt
+.PHONY: install train evaluate test serve recommend clean
 
-install-dev:        ## разработка: веб + тесты
-	pip install -r requirements-dev.txt
+install:
+	$(PYTHON) -m pip install -r requirements-dev.txt
 
-download-model:     ## предзагрузка весов sd-turbo в кэш Hugging Face
-	python scripts/download_model.py
+train:
+	$(PYTHON) -m src.cli train --events $(EVENTS) --artifacts $(ARTIFACTS)
 
-generate:           ## прогон по заданию (5 промптов, seed 116)
-	python -m src.generate --prompts prompts.txt --out outputs/
+evaluate:
+	$(PYTHON) -m src.cli evaluate --artifacts $(ARTIFACTS)
 
-checks:             ## проверки результатов прогона
-	python -m src.checks
+test:
+	$(PYTHON) -m pytest -q
 
-test:               ## unit-тесты
-	pytest -q
+serve:
+	$(PYTHON) -m src.cli serve --artifacts $(ARTIFACTS) --port 8000
 
-server:             ## запуск одностраничного сайта
-	uvicorn src.server:app --host 0.0.0.0 --port 8000
+recommend:
+	$(PYTHON) -m src.cli recommend --artifacts $(ARTIFACTS) --visitor-id 257597
+
+clean:
+	rm -rf artifacts .pytest_cache
