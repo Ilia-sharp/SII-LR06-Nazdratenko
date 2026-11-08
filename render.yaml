@@ -1,0 +1,16 @@
+# Render Blueprint: рекомендательный сервис.
+# Тариф Free: 512 MB RAM; API читает готовые артефакты из artifacts/.
+services:
+  - type: web
+    name: sii-lr06-nazdratenko
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements-web.txt
+    startCommand: python scripts/start.py
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: ARTIFACTS_DIR
+        value: artifacts

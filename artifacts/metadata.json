@@ -1,0 +1,331 @@
+{
+  "generated_at": "2026-11-07T05:54:02.878724+00:00",
+  "lab": "Рекомендательные ИИ-системы",
+  "variant": {
+    "number": 16,
+    "condition": "visitorid % 30 = 15",
+    "scenario": "Один источник истории",
+    "individual_condition": "Использовать только последние события пользователя; контекст не смешивается с сессиями других посетителей",
+    "top_n": 10
+  },
+  "config": {
+    "variant": 16,
+    "target_mod": 30,
+    "target_remainder": 15,
+    "event_weights": {
+      "view": 1.0,
+      "addtocart": 3.0,
+      "transaction": 5.0
+    },
+    "target_events": [
+      "addtocart",
+      "transaction"
+    ],
+    "context_events": [
+      "view",
+      "addtocart",
+      "transaction"
+    ],
+    "session_gap_minutes": 30,
+    "test_fraction": 0.2,
+    "context_size": 5,
+    "top_n": 10,
+    "max_session_items": 50,
+    "random_seed": 42,
+    "context_source": "visitor_history"
+  },
+  "data": {
+    "source": "data/events.csv",
+    "rows_raw": 2756101,
+    "rows_clean": 2755641,
+    "missing_values_raw": {
+      "timestamp": 0,
+      "visitorid": 0,
+      "event": 0,
+      "itemid": 0,
+      "transactionid": 2733644
+    },
+    "rows_with_broken_ids_or_timestamp": 0,
+    "duplicates_removed": 460,
+    "unknown_events_removed": 0,
+    "event_counts": {
+      "view": 2664218,
+      "addtocart": 68966,
+      "transaction": 22457
+    },
+    "visitors": 1407580,
+    "items": 235061,
+    "timestamp_min": "2015-05-03T03:00:04.384000+00:00",
+    "timestamp_max": "2015-09-18T02:59:47.788000+00:00",
+    "span_days": 138.0,
+    "dtypes": {
+      "timestamp": "datetime64[us, UTC]",
+      "visitorid": "int64",
+      "event": "str",
+      "itemid": "int64",
+      "transactionid": "float64"
+    }
+  },
+  "split": {
+    "cutoff": "2015-08-21T12:35:51.107200+00:00",
+    "test_fraction": 0.2,
+    "train_rows": 2266031,
+    "test_rows": 489610,
+    "train_share": 0.8223,
+    "test_share": 0.1777,
+    "train_timestamp_min": "2015-05-03T03:00:04.384000+00:00",
+    "train_timestamp_max": "2015-08-21T12:35:39.683000+00:00",
+    "test_timestamp_min": "2015-08-21T12:36:21.851000+00:00",
+    "test_timestamp_max": "2015-09-18T02:59:47.788000+00:00"
+  },
+  "sessions": {
+    "sessions": 1436517,
+    "mean_events_per_session": 1.577,
+    "median_events_per_session": 1.0,
+    "max_events_per_session": 417,
+    "single_event_sessions": 1121397
+  },
+  "popularity": {
+    "weights": {
+      "view": 1.0,
+      "addtocart": 3.0,
+      "transaction": 5.0
+    },
+    "top10": [
+      {
+        "itemid": 461686,
+        "score": 2963.0
+      },
+      {
+        "itemid": 5411,
+        "score": 2169.0
+      },
+      {
+        "itemid": 187946,
+        "score": 2071.0
+      },
+      {
+        "itemid": 257040,
+        "score": 1911.0
+      },
+      {
+        "itemid": 309778,
+        "score": 1775.0
+      },
+      {
+        "itemid": 370653,
+        "score": 1656.0
+      },
+      {
+        "itemid": 7943,
+        "score": 1598.0
+      },
+      {
+        "itemid": 369447,
+        "score": 1491.0
+      },
+      {
+        "itemid": 298009,
+        "score": 1473.0
+      },
+      {
+        "itemid": 48030,
+        "score": 1464.0
+      }
+    ]
+  },
+  "covisitation": {
+    "vocabulary_items": 215683,
+    "pair_occurrences": 2004561,
+    "unique_pairs": 1724569,
+    "mean_neighbors_per_item": 15.99,
+    "max_session_items": 50,
+    "sessions_with_pairs": 217996
+  },
+  "targets": {
+    "variant_test_events": 17035,
+    "variant_test_visitors": 9311,
+    "target_events_rows": 468,
+    "target_visitors": 226,
+    "mean_targets_per_visitor": 2.071,
+    "target_event_counts": {
+      "addtocart": 494,
+      "transaction": 185
+    }
+  },
+  "evaluation_protocol": {
+    "model_training": "только train (временная граница 80/20)",
+    "context": "последние события пользователя строго до первого целевого события test; более ранние события test допустимы как контекст, целевые события в контекст не попадают",
+    "history_filter": "все уникальные товары пользователя до момента выдачи",
+    "target_events": [
+      "addtocart",
+      "transaction"
+    ],
+    "view_role": "контекст, не цель"
+  },
+  "evaluation": {
+    "k": 10,
+    "target_visitors": 226,
+    "evaluated_visitors": 178,
+    "cold_start_visitors": 48,
+    "visitors_with_history_but_no_context": 0,
+    "mean_context_length": 1.792,
+    "mean_targets_per_evaluated_visitor": 2.208,
+    "popularity": {
+      "precision@10": 0.000562,
+      "recall@10": 0.000268,
+      "ndcg@10": 0.001236,
+      "hit_rate@10": 0.005618,
+      "catalog_coverage": 11
+    },
+    "covisitation": {
+      "precision@10": 0.00618,
+      "recall@10": 0.021191,
+      "ndcg@10": 0.015219,
+      "hit_rate@10": 0.05618,
+      "catalog_coverage": 1353
+    },
+    "new_targets": {
+      "target_pairs": 209,
+      "all_target_pairs": 393,
+      "share_already_in_history": 0.468193,
+      "evaluated_visitors": 43,
+      "popularity": {
+        "precision@10": 0.002326,
+        "recall@10": 0.001163,
+        "ndcg@10": 0.005118,
+        "hit_rate@10": 0.023256,
+        "catalog_coverage": 11
+      },
+      "covisitation": {
+        "precision@10": 0.025581,
+        "recall@10": 0.124636,
+        "ndcg@10": 0.078371,
+        "hit_rate@10": 0.232558,
+        "catalog_coverage": 1353
+      }
+    }
+  },
+  "example": {
+    "visitor_id": 582525,
+    "context_items": [
+      179527,
+      351908
+    ],
+    "context_weights": [
+      1.0,
+      1.0
+    ],
+    "history_size": 2,
+    "test_target_items": [
+      147,
+      250462,
+      349091
+    ],
+    "covisitation": [
+      {
+        "itemid": 6079,
+        "score": 6.0,
+        "hit": false
+      },
+      {
+        "itemid": 251828,
+        "score": 6.0,
+        "hit": false
+      },
+      {
+        "itemid": 253256,
+        "score": 6.0,
+        "hit": false
+      },
+      {
+        "itemid": 66928,
+        "score": 5.0,
+        "hit": false
+      },
+      {
+        "itemid": 3872,
+        "score": 4.0,
+        "hit": false
+      },
+      {
+        "itemid": 423612,
+        "score": 4.0,
+        "hit": false
+      },
+      {
+        "itemid": 449023,
+        "score": 4.0,
+        "hit": false
+      },
+      {
+        "itemid": 147,
+        "score": 3.0,
+        "hit": true
+      },
+      {
+        "itemid": 32843,
+        "score": 3.0,
+        "hit": false
+      },
+      {
+        "itemid": 34355,
+        "score": 3.0,
+        "hit": false
+      }
+    ],
+    "popularity": [
+      {
+        "itemid": 461686,
+        "score": 2963.0,
+        "hit": false
+      },
+      {
+        "itemid": 5411,
+        "score": 2169.0,
+        "hit": false
+      },
+      {
+        "itemid": 187946,
+        "score": 2071.0,
+        "hit": false
+      },
+      {
+        "itemid": 257040,
+        "score": 1911.0,
+        "hit": false
+      },
+      {
+        "itemid": 309778,
+        "score": 1775.0,
+        "hit": false
+      },
+      {
+        "itemid": 370653,
+        "score": 1656.0,
+        "hit": false
+      },
+      {
+        "itemid": 7943,
+        "score": 1598.0,
+        "hit": false
+      },
+      {
+        "itemid": 369447,
+        "score": 1491.0,
+        "hit": false
+      },
+      {
+        "itemid": 298009,
+        "score": 1473.0,
+        "hit": false
+      },
+      {
+        "itemid": 48030,
+        "score": 1464.0,
+        "hit": false
+      }
+    ],
+    "explanation": "Кандидаты — соседи последних товаров пользователя по сессиям train; score агрегирует совместные частоты с весами событий. Из выдачи удалены все товары, которые уже были в истории."
+  }
+}

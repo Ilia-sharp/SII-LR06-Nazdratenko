@@ -1,0 +1,3 @@
+# Минимальные зависимости для Render/веб-сервера.
+# Полный набор — в requirements.txt.
+-r requirements.txt

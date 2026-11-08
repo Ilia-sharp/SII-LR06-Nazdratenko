@@ -66,6 +66,7 @@ def create_app(artifacts_dir: str | Path | None = None) -> FastAPI:
         }
 
     @app.get("/health")
+    @app.get("/api/health", include_in_schema=False)
     def health():
         try:
             loaded = bundle()
@@ -79,6 +80,7 @@ def create_app(artifacts_dir: str | Path | None = None) -> FastAPI:
         }
 
     @app.get("/info")
+    @app.get("/api/info", include_in_schema=False)
     def info():
         loaded = bundle()
         meta = loaded.metadata
@@ -96,10 +98,12 @@ def create_app(artifacts_dir: str | Path | None = None) -> FastAPI:
         }
 
     @app.get("/metrics")
+    @app.get("/api/metrics", include_in_schema=False)
     def metrics():
         return bundle().metadata.get("evaluation", {})
 
     @app.get("/recommend")
+    @app.get("/api/recommend", include_in_schema=False)
     def recommend_get(
         visitor_id: Optional[int] = Query(default=None),
         items: Optional[str] = Query(
@@ -128,6 +132,7 @@ def create_app(artifacts_dir: str | Path | None = None) -> FastAPI:
         )
 
     @app.post("/recommend")
+    @app.post("/api/recommend", include_in_schema=False)
     def recommend_post(request: RecommendRequest):
         if (request.visitor_id is None) == (request.item_ids is None):
             raise HTTPException(

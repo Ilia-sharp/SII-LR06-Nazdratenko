@@ -73,8 +73,9 @@ python -m src.cli serve --artifacts artifacts --host 127.0.0.1 --port 8000
 # http://127.0.0.1:8000/docs
 ```
 
-Исходный `events.csv` и обученные артефакты **не коммитятся**: данные
-скачиваются отдельно, модель восстанавливается командой `train`.
+Исходный `events.csv` **не коммитится** (лицензия и размер); он скачивается
+отдельно. Готовые артефакты модели лежат в `artifacts/`, чтобы API сразу
+работало на Render; при желании их можно пересобрать командой `train`.
 
 ## Структура проекта
 
@@ -97,12 +98,15 @@ SII-LR06-Nazdratenko/
 │   └── api.py                   # FastAPI: GET/POST /recommend
 ├── tests/                       # 16 unit/integration-тестов на синтетике
 ├── scripts/
-│   └── download_data.py         # скачивание events.csv через Kaggle CLI
-├── artifacts/                   # создаётся при обучении (в git не входит)
+│   ├── download_data.py         # скачивание events.csv через Kaggle CLI
+│   └── start.py                 # запуск API на Render (PORT, 0.0.0.0)
+├── artifacts/                   # обученная модель (model.npz) + metadata.json
 ├── REPORT.md                    # отчёт по лабораторной работе
 ├── ARCHITECTURE.md              # схема конвейера и модулей
+├── render.yaml                  # Render Blueprint
 ├── requirements.txt
 ├── requirements-dev.txt
+├── requirements-web.txt         # зависимости для Render
 ├── Makefile
 └── .github/workflows/ci.yml     # pytest на GitHub Actions
 ```
@@ -330,7 +334,24 @@ curl -X POST http://127.0.0.1:8000/recommend \
 Полный прогон на 2.76 млн событий занимает около **30 секунд** на CPU
 (загрузка CSV, обучение, оценка и сохранение артефактов). Результаты
 детерминированы: случайное перемешивание не используется, seed не влияет
-на модели.
+на модели. Готовые артефакты (`artifacts/model.npz`, ~25 МБ) закоммичены,
+поэтому HTTP API запускается сразу после клонирования; `train` пересобирает
+их из `events.csv`.
+
+## Деплой на Render
+
+В репозитории есть `render.yaml` (Blueprint, тариф Free):
+
+* build: `pip install -r requirements-web.txt`;
+* start: `python scripts/start.py` (читает `PORT`, слушает `0.0.0.0`);
+* health-check: `/api/health`;
+* артефакты модели берутся из `artifacts/`, датасет на сервер не нужен.
+
+Для существующего сервиса, созданного из старого Blueprint, достаточно
+запушить эти файлы: build/start-команды и `/api/health` совместимы со старой
+конфигурацией. Если сервис хранит старые команды, в Render → Settings
+укажите build `pip install -r requirements-web.txt`, start
+`python scripts/start.py`.
 
 ## Ошибки, ограничения, cold start и утечки
 

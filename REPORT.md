@@ -214,7 +214,8 @@ python -m src.cli serve --artifacts artifacts --port 8000
 `context_size=5`, `top_n=10`, `max_session_items=50`, веса 1/3/5,
 цель — `addtocart`+`transaction`. Полный прогон на 2.76 млн событий —
 около 30 секунд на CPU. Все параметры и метрики сохраняются в
-`artifacts/metadata.json`; артефакты в git не входят и восстанавливаются
-командой `train`. Тесты: `pytest -q` (16 тестов).
+`artifacts/metadata.json`; датасет в репозиторий не входит, а готовые
+артефакты модели закоммичены для демо на Render и пересобираются командой
+`train`. Тесты: `pytest -q` (16 тестов).
 
 Ссылка на код: <https://github.com/Ilia-sharp/SII-LR06-Nazdratenko>.
