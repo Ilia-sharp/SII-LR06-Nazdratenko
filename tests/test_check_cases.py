@@ -20,10 +20,13 @@ pytestmark = pytest.mark.skipif(
 def test_check_cases_match_committed_model():
     payload = json.loads(CASES_PATH.read_text(encoding="utf-8"))
     cases = payload["cases"]
-    assert len(cases) >= 7
+    assert len(cases) >= 12
 
     bundle = load_bundle(ARTIFACTS_DIR)
     for case in cases:
+        assert case["visitorid_mod_30"] == 15
+        assert case["target_group"] is True
+
         actual = recommend_for_visitor(
             bundle, case["visitor_id"], n=10
         )
@@ -38,3 +41,10 @@ def test_check_cases_match_committed_model():
         actual_scores = [item["score"] for item in actual["recommendations"]]
         expected_scores = [item["score"] for item in case["top10"]]
         assert actual_scores == pytest.approx(expected_scores, abs=1e-6)
+
+
+def test_site_lists_every_check_case():
+    payload = json.loads(CASES_PATH.read_text(encoding="utf-8"))
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    for case in payload["cases"]:
+        assert f'data-id="{case["visitor_id"]}"' in html

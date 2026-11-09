@@ -6,113 +6,173 @@
 <title>Подбор товаров для покупателя</title>
 <style>
   :root {
-    --bg: #fbfbfa;
+    --bg: #f6f8fc;
     --panel: #ffffff;
-    --text: #15181d;
-    --muted: #7c8493;
-    --line: #eceef1;
-    --accent: #1f6feb;
-    --green: #16794a;
-    --red: #c0392b;
-    --radius: 14px;
+    --text: #111827;
+    --muted: #6b7280;
+    --line: #e5eaf1;
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --accent-soft: #eff5ff;
+    --green: #0f766e;
+    --green-soft: #e9f9f2;
+    --amber: #b45309;
+    --amber-soft: #fff5e8;
+    --red: #b42318;
+    --radius: 16px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
-    background: var(--bg);
+    background:
+      radial-gradient(900px 420px at 50% -180px, #e8f0ff 0%, rgba(232, 240, 255, 0) 70%),
+      var(--bg);
     color: var(--text);
     font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
   button, input, select { font: inherit; }
-  .page { width: min(1040px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0 28px; }
+  .page { width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 40px 0 30px; }
 
-  .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 26px; }
-  h1 { margin: 0; font-size: clamp(21px, 2.4vw, 26px); font-weight: 650; letter-spacing: -0.02em; line-height: 1.2; }
-  .sub { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
-  .variant { color: var(--muted); font-size: 12px; white-space: nowrap; padding-top: 4px; }
+  .head { margin-bottom: 26px; }
+  .eyebrow {
+    margin: 0 0 8px; color: var(--accent); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.10em; text-transform: uppercase;
+  }
+  h1 { margin: 0; font-size: clamp(24px, 3vw, 34px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+  .sub { max-width: 720px; margin: 9px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+  .variant {
+    display: inline-block; margin-top: 13px; padding: 4px 10px; border-radius: 999px;
+    background: #fff; border: 1px solid var(--line); color: var(--muted);
+    font-size: 11.5px; font-variant-numeric: tabular-nums;
+  }
 
-  .layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 20px; align-items: start; }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
-  .results { min-height: 420px; display: flex; flex-direction: column; }
+  .layout { display: grid; grid-template-columns: 345px minmax(0, 1fr); gap: 22px; align-items: start; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 20px; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+  }
+  .results { min-height: 500px; display: flex; flex-direction: column; }
 
-  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #f4f5f7; border-radius: 10px; padding: 3px; margin-bottom: 18px; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: #f2f5f9; border-radius: 11px; padding: 3px; margin-bottom: 18px; }
   .seg button {
     border: 0; background: transparent; border-radius: 8px; padding: 8px;
-    font-size: 13px; color: var(--muted); cursor: pointer;
+    font-size: 13px; color: var(--muted); cursor: pointer; transition: background 0.15s, color 0.15s;
   }
-  .seg button.active { background: #fff; color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08); }
+  .seg button.active { background: #fff; color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(16, 24, 40, 0.10); }
 
   label { display: block; margin-bottom: 6px; font-size: 12px; color: var(--muted); }
   .field { margin-bottom: 14px; }
   input, select {
-    width: 100%; border: 1px solid #e3e6ea; border-radius: 9px; background: #fff;
-    color: var(--text); padding: 10px 11px; font-size: 14px; outline: none;
+    width: 100%; border: 1px solid #dfe5ee; border-radius: 10px; background: #fbfcfe;
+    color: var(--text); padding: 10px 12px; font-size: 14px; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
   }
-  input:focus, select:focus { border-color: #b9c6da; }
+  input:focus, select:focus { border-color: #93b4ff; background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); }
   .row { display: grid; grid-template-columns: 1fr 1.3fr; gap: 10px; margin-bottom: 16px; }
 
   .actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
   .primary, .ghost {
-    border-radius: 9px; padding: 11px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
+    border-radius: 10px; padding: 11px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
   }
-  .primary { background: #1c2431; color: #fff; border: 1px solid #1c2431; }
-  .primary:hover { background: #111826; border-color: #111826; }
-  .primary:disabled { opacity: 0.5; cursor: wait; }
-  .ghost { background: #fff; border: 1px solid #e3e6ea; color: var(--text); font-weight: 500; }
-  .ghost:hover { border-color: #cfd5dd; }
-  .hint { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+  .primary {
+    background: var(--accent); color: #fff; border: 1px solid var(--accent);
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.20);
+  }
+  .primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+  .primary:disabled { opacity: 0.55; cursor: wait; box-shadow: none; }
+  .ghost { background: #fff; border: 1px solid #dfe5ee; color: var(--text); font-weight: 500; }
+  .ghost:hover { border-color: #b9c6da; background: #fbfcfe; }
 
-  .res-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
-  h2 { margin: 0; font-size: 15px; font-weight: 600; }
-  .status { font-size: 12px; color: var(--muted); }
-  .status.ok { color: var(--green); }
-  .status.error { color: var(--red); }
-  .meta { margin: 2px 0 10px; color: var(--muted); font-size: 12px; min-height: 18px; }
+  .steps { margin: 16px 0 0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+  .steps li { margin-bottom: 5px; }
+  .steps li:last-child { margin-bottom: 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 
-  .context { margin: 4px 0 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fcfcfd; }
-  .context h3 { margin: 0 0 8px; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-  .events { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
-  .events li { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; font-size: 12.5px; }
-  .ev-type { font-size: 11.5px; }
-  .ev-type.view { color: var(--muted); }
-  .ev-type.cart { color: #b45309; }
-  .ev-type.buy { color: var(--green); }
+  .res-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  h2 { margin: 0; font-size: 16px; font-weight: 650; }
+  .res-sub { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+  .status {
+    flex: none; padding: 4px 9px; border-radius: 999px; background: #f2f5f9;
+    color: var(--muted); font-size: 11.5px; white-space: nowrap;
+  }
+  .status:empty { display: none; }
+  .status.ok { background: var(--green-soft); color: var(--green); }
+  .status.error { background: #fef3f2; color: var(--red); }
+  .meta { margin: 10px 0 12px; color: var(--muted); font-size: 12px; min-height: 18px; }
+
+  .context {
+    margin: 0 0 16px; padding: 12px 14px; border: 1px solid #dfe9f8; border-radius: 12px;
+    background: linear-gradient(180deg, #f7faff 0%, #ffffff 100%);
+  }
+  .context-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+  .context h3 { margin: 0; color: #475569; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .context-note { color: #94a3b8; font-size: 10.5px; }
+  .events { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+  .events li { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 12.5px; }
+  .ev-type {
+    display: inline-block; justify-self: start; padding: 2px 7px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 600; white-space: nowrap;
+  }
+  .ev-type.view { background: #eef2f7; color: #475569; }
+  .ev-type.cart { background: var(--amber-soft); color: var(--amber); }
+  .ev-type.buy { background: var(--green-soft); color: var(--green); }
   .ev-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ev-id { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
 
-  .steps { margin: 14px 0 0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.55; }
-  .steps li { margin-bottom: 4px; }
-  .steps li:last-child { margin-bottom: 0; }
-
-  .samples { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
-  .samples h3 { margin: 0 0 4px; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-  .sample {
-    display: grid; grid-template-columns: 86px minmax(0, 1fr) auto; gap: 8px;
-    align-items: baseline; width: 100%; padding: 7px 0; border: 0;
-    border-bottom: 1px solid var(--line); background: none; text-align: left;
-    font-size: 12.5px; color: var(--text); cursor: pointer;
+  .recs { flex: 1; display: grid; gap: 8px; align-content: start; }
+  .rec {
+    display: grid; grid-template-columns: 26px 40px minmax(0, 1fr) auto; gap: 10px;
+    align-items: center; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 12px; background: #fff; transition: border-color 0.15s, background 0.15s;
   }
-  .sample:last-child { border-bottom: 0; }
-  .sample:hover .sample-id { color: var(--accent); }
-  .sample-id { font-weight: 600; font-variant-numeric: tabular-nums; }
-  .sample-note { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
-  .sample-copy { color: var(--muted); font-size: 11px; white-space: nowrap; }
+  .rec:hover { border-color: #c7d7ef; background: #fcfdff; }
+  .rec.top { border-color: #cfe0ff; background: linear-gradient(90deg, #f2f7ff 0%, #ffffff 78%); }
+  .rec.top:first-child { border-color: #93b4ff; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.10); }
+  .rank {
+    width: 26px; height: 26px; border-radius: 999px; display: grid; place-items: center;
+    background: #eef2f7; color: #64748b; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .rec.top .rank { background: var(--accent); color: #fff; }
+  .thumb { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 19px; }
+  .rec-main { min-width: 0; display: grid; gap: 1px; }
+  .name { font-size: 13.5px; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .id { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .score {
+    display: grid; justify-items: end; line-height: 1.15; padding: 4px 9px;
+    background: #f4f7fb; border-radius: 999px; color: #334155;
+    font-size: 12.5px; font-weight: 650; font-variant-numeric: tabular-nums;
+  }
+  .score span { color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .rec.top .score { background: #e7efff; color: #1e40af; }
+
+  .empty { min-height: 330px; display: flex; flex-direction: column; justify-content: center; text-align: center; padding: 24px; color: var(--muted); font-size: 13.5px; }
+  .empty strong { display: block; margin-bottom: 4px; color: var(--text); font-size: 14px; font-weight: 600; }
+
+  .samples-panel { margin-top: 22px; }
+  .samples-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .samples-head p { max-width: 720px; margin: 5px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+  .badge {
+    flex: none; padding: 4px 9px; border-radius: 999px; background: var(--accent-soft);
+    color: var(--accent); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+  }
+  .samples-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 9px; margin-top: 15px; }
+  .sample {
+    display: grid; gap: 3px; width: 100%; padding: 11px 12px; border: 1px solid var(--line);
+    border-radius: 11px; background: #fcfdff; text-align: left; color: var(--text);
+    cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  }
+  .sample:hover { border-color: #a9c3f5; background: var(--accent-soft); transform: translateY(-1px); }
+  .sample-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .sample-id { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .sample-copy { color: var(--muted); font-size: 10px; white-space: nowrap; }
+  .sample-note { color: var(--muted); font-size: 11.5px; line-height: 1.35; }
+  .sample.copied { border-color: #86d3bc; background: var(--green-soft); }
   .sample.copied .sample-copy { color: var(--green); }
-  .samples-hint { margin: 8px 0 0; color: var(--muted); font-size: 11.5px; line-height: 1.45; }
+  .samples-hint { margin: 12px 0 0; color: var(--muted); font-size: 11.5px; line-height: 1.45; }
 
-  .recs { flex: 1; }
-  .rec { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
-  .rec:last-child { border-bottom: 0; }
-  .thumb { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 19px; background: #f3f5f8; }
-  .name { font-size: 14px; font-weight: 550; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .id { margin-top: 2px; color: var(--muted); font-size: 11.5px; }
-  .score { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
-
-  .empty { min-height: 300px; display: flex; flex-direction: column; justify-content: center; text-align: center; padding: 24px; color: var(--muted); font-size: 13.5px; }
-  .empty strong { display: block; margin-bottom: 4px; color: var(--text); font-size: 14px; font-weight: 550; }
-
-  .quality { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .quality { margin-top: 18px; border: 1px solid var(--line); border-radius: 14px; background: #fff; padding: 15px 18px; }
   .quality summary { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12.5px; cursor: pointer; list-style: none; }
   .quality summary::-webkit-details-marker { display: none; }
   .quality summary::before { content: "+"; width: 12px; text-align: center; }
@@ -124,27 +184,27 @@
   .quality th { color: var(--muted); font-weight: 500; }
   .quality p { margin: 10px 0 0; color: var(--muted); font-size: 11.5px; }
 
-  footer { margin-top: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; color: #9aa1ad; font-size: 11.5px; }
+  footer { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; color: #94a3b8; font-size: 11.5px; }
   footer a { color: var(--accent); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
 
   @media (max-width: 860px) {
-    .page { width: min(100% - 24px, 620px); padding-top: 22px; }
-    .head { flex-direction: column; gap: 6px; }
+    .page { width: min(100% - 24px, 640px); padding-top: 24px; }
     .layout { grid-template-columns: 1fr; }
     .results { min-height: 0; }
     .empty { min-height: 180px; }
+    .samples-head { flex-direction: column; gap: 8px; }
+    .samples-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 <main class="page">
   <header class="head">
-    <div>
-      <h1>Подбор товаров для покупателя</h1>
-      <p class="sub">Десять товаров по последним просмотрам, корзине и покупкам</p>
-    </div>
-    <span class="variant">Вариант 16</span>
+    <p class="eyebrow">Retailrocket · лабораторная работа · вариант 16</p>
+    <h1>Подбор товаров для покупателя</h1>
+    <p class="sub">Берём последние 5 событий покупателя — просмотры, корзину и покупки — и показываем 10 товаров, которые часто покупают вместе с ними.</p>
+    <span class="variant">visitorid % 30 = 15 · Top-10</span>
   </header>
 
   <div class="layout">
@@ -188,55 +248,33 @@
         <button class="ghost" id="example" type="button">Пример</button>
       </div>
 
-      <p class="hint" hidden>Берём последние 5 событий покупателя. Уже просмотренное не советуем.</p>
       <ol class="steps">
         <li>Введите ID покупателя и нажмите «Подобрать».</li>
         <li>Сервис берёт последние 5 событий: что смотрел, клал в корзину, купил.</li>
-        <li>Справа — Top-10 похожих товаров. Кнопка «Пример» заполнит форму сама.</li>
+        <li>Справа — Top-10 похожих товаров. Уже виденное не советуем.</li>
       </ol>
-
-      <div class="samples">
-        <h3>Покупатели для проверки</h3>
-        <div id="samples">
-          <button type="button" class="sample" data-id="582525">
-            <span class="sample-id">582525</span>
-            <span class="sample-note">просмотры</span>
-            <span class="sample-copy">копировать</span>
-          </button>
-          <button type="button" class="sample" data-id="4348">
-            <span class="sample-id">4348</span>
-            <span class="sample-note">товар в корзине</span>
-            <span class="sample-copy">копировать</span>
-          </button>
-          <button type="button" class="sample" data-id="9235">
-            <span class="sample-id">9235</span>
-            <span class="sample-note">покупка</span>
-            <span class="sample-copy">копировать</span>
-          </button>
-          <button type="button" class="sample" data-id="55389">
-            <span class="sample-id">55389</span>
-            <span class="sample-note">длинная история</span>
-            <span class="sample-copy">копировать</span>
-          </button>
-          <button type="button" class="sample" data-id="999999999">
-            <span class="sample-id">999999999</span>
-            <span class="sample-note">новый покупатель</span>
-            <span class="sample-copy">копировать</span>
-          </button>
-        </div>
-        <p class="samples-hint">Нажмите на ID — скопируем его и сразу покажем рекомендации.</p>
+      <div class="legend" aria-label="Веса событий">
+        <span class="ev-type view">просмотр · 1</span>
+        <span class="ev-type cart">корзина · 3</span>
+        <span class="ev-type buy">покупка · 5</span>
       </div>
     </form>
 
     <section class="panel results">
       <div class="res-head">
-        <h2>Рекомендации</h2>
+        <div>
+          <h2>Рекомендации</h2>
+          <p class="res-sub">Чем выше товар, тем сильнее он связан с последними событиями.</p>
+        </div>
         <span class="status" id="status"></span>
       </div>
       <p class="meta" id="meta"></p>
 
       <div class="context" id="contextBlock" hidden>
-        <h3 id="contextTitle">Последние события покупателя</h3>
+        <div class="context-head">
+          <h3 id="contextTitle">Последние события покупателя</h3>
+          <span class="context-note">до 5 событий</span>
+        </div>
         <ul class="events" id="events"></ul>
       </div>
 
@@ -248,6 +286,67 @@
       </div>
     </section>
   </div>
+
+  <section class="panel samples-panel">
+    <div class="samples-head">
+      <div>
+        <h2>Покупатели для проверки</h2>
+        <p>Нажмите на карточку — ID скопируется, подставится в форму и подбор запустится сам. Все 12 ID входят в целевую группу варианта.</p>
+      </div>
+      <span class="badge">visitorid % 30 = 15</span>
+    </div>
+    <div class="samples-grid" id="samples">
+      <button type="button" class="sample" data-id="582525">
+        <span class="sample-top"><span class="sample-id">582525</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">просмотры · есть попадание</span>
+      </button>
+      <button type="button" class="sample" data-id="795975">
+        <span class="sample-top"><span class="sample-id">795975</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">просмотры · попадание на 5-м месте</span>
+      </button>
+      <button type="button" class="sample" data-id="1374225">
+        <span class="sample-top"><span class="sample-id">1374225</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">один товар · добивка популярными</span>
+      </button>
+      <button type="button" class="sample" data-id="1181805">
+        <span class="sample-top"><span class="sample-id">1181805</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">без истории · cold start</span>
+      </button>
+      <button type="button" class="sample" data-id="896175">
+        <span class="sample-top"><span class="sample-id">896175</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">товар в корзине</span>
+      </button>
+      <button type="button" class="sample" data-id="1258035">
+        <span class="sample-top"><span class="sample-id">1258035</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">две покупки в истории</span>
+      </button>
+      <button type="button" class="sample" data-id="1134975">
+        <span class="sample-top"><span class="sample-id">1134975</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">история 152 · полный контекст</span>
+      </button>
+      <button type="button" class="sample" data-id="645525">
+        <span class="sample-top"><span class="sample-id">645525</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">история 144 · полный контекст</span>
+      </button>
+      <button type="button" class="sample" data-id="1170165">
+        <span class="sample-top"><span class="sample-id">1170165</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">полный контекст из 5</span>
+      </button>
+      <button type="button" class="sample" data-id="801975">
+        <span class="sample-top"><span class="sample-id">801975</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">история 9 · контекст 3</span>
+      </button>
+      <button type="button" class="sample" data-id="1125765">
+        <span class="sample-top"><span class="sample-id">1125765</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">история 11 · контекст 4</span>
+      </button>
+      <button type="button" class="sample" data-id="16725">
+        <span class="sample-top"><span class="sample-id">16725</span><span class="sample-copy">копировать</span></span>
+        <span class="sample-note">контекст 4</span>
+      </button>
+    </div>
+    <p class="samples-hint">Одинаковый ID при повторной проверке даёт одинаковый порядок и оценки. Полные эталоны — в <a href="https://github.com/Ilia-sharp/SII-LR06-Nazdratenko/blob/main/CHECK.md">CHECK.md</a>.</p>
+  </section>
 
   <details class="quality">
     <summary>Качество модели на тесте (Top-10)</summary>
@@ -450,17 +549,20 @@
       return;
     }
 
-    recsEl.innerHTML = recommendations.map((item) => {
+    recsEl.innerHTML = recommendations.map((item, index) => {
+      const rank = index + 1;
       const product = productFor(item.itemid);
+      const top = rank <= 3 ? ' top' : '';
       return `
-        <div class="rec">
-          <div class="thumb" style="background:${product.tint}">${product.icon}</div>
-          <div>
-            <div class="name">${product.name}</div>
-            <div class="id">itemid ${item.itemid}</div>
-          </div>
-          <div class="score">${formatScore(item.score)}</div>
-        </div>`;
+        <article class="rec${top}">
+          <span class="rank">${rank}</span>
+          <span class="thumb" style="background:${product.tint}">${product.icon}</span>
+          <span class="rec-main">
+            <span class="name">${product.name}</span>
+            <span class="id">itemid ${item.itemid}</span>
+          </span>
+          <span class="score"><span>оценка</span>${formatScore(item.score)}</span>
+        </article>`;
     }).join('');
     setStatus('Готово', 'ok');
   }
@@ -550,6 +652,7 @@
     $('model').value = 'auto';
     await copyText(visitorId);
     form.requestSubmit();
+    document.querySelector('.results').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
   fetch('/api/info')
