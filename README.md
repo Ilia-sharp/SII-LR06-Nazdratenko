@@ -100,6 +100,8 @@ SII-LR06-Nazdratenko/
 ├── scripts/
 │   ├── download_data.py         # скачивание events.csv через Kaggle CLI
 │   └── start.py                 # запуск API на Render (PORT, 0.0.0.0)
+├── web/
+│   └── index.html               # веб-интерфейс Top-10 (без внешних зависимостей)
 ├── artifacts/                   # обученная модель (model.npz) + metadata.json
 ├── REPORT.md                    # отчёт по лабораторной работе
 ├── ARCHITECTURE.md              # схема конвейера и модулей
@@ -279,11 +281,15 @@ python -m src.cli recommend --artifacts artifacts --visitor-id 582525 --n 10
 baseline для этого же пользователя не дал ни одного попадания: глобальные
 хиты не совпали с его покупками.
 
-## HTTP API
+## HTTP API и веб-интерфейс
 
 ```bash
 python -m src.cli serve --artifacts artifacts --port 8000
 ```
+
+Откройте <http://127.0.0.1:8000/> — там веб-интерфейс: можно ввести
+`visitorid` или список товаров текущей сессии, выбрать модель и получить
+Top-10 с оценками. На той же странице показаны метрики обеих моделей.
 
 ```bash
 curl "http://127.0.0.1:8000/recommend?visitor_id=582525&n=10"
@@ -314,6 +320,8 @@ curl -X POST http://127.0.0.1:8000/recommend \
 Параметр `model` принимает `auto` (по умолчанию), `covisitation` или
 `popularity`. Для холодного пользователя автоматически используется
 популярностный fallback и в ответе будет `"model": "popularity_cold_start"`.
+Веб-интерфейс отдаётся по `/` из `web/index.html`; JSON-описание сервиса —
+по `/api`.
 
 ## Воспроизводимость
 

@@ -20,6 +20,7 @@ flowchart LR
     J --> K[(artifacts/<br/>model.npz + metadata.json)]
     K --> L[cli.py<br/>recommend]
     K --> M[api.py<br/>FastAPI]
+    M --> W[web/index.html<br/>Top-10 UI]
 ```
 
 ## Модули
@@ -38,6 +39,7 @@ flowchart LR
 | `src/artifacts.py` | Формат `model.npz`, загрузка, выдача по visitorid/itemids |
 | `src/cli.py` | Команды `train`, `evaluate`, `recommend`, `serve` |
 | `src/api.py` | HTTP API (`GET/POST /recommend`, `/metrics`, `/health`) |
+| `web/index.html` | Одностраничный интерфейс: visitorid/товары → Top-10 |
 
 ## Артефакты
 

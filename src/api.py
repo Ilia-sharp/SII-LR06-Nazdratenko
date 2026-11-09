@@ -12,9 +12,12 @@ from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .artifacts import ModelBundle, load_bundle, recommend_for_items, recommend_for_visitor
+
+WEB_INDEX = Path(__file__).resolve().parent.parent / "web" / "index.html"
 
 
 class RecommendRequest(BaseModel):
@@ -57,6 +60,18 @@ def create_app(artifacts_dir: str | Path | None = None) -> FastAPI:
 
     @app.get("/", include_in_schema=False)
     def root():
+        if WEB_INDEX.exists():
+            return FileResponse(WEB_INDEX, media_type="text/html")
+        return {
+            "service": "Retailrocket recommender",
+            "variant": 16,
+            "docs": "/docs",
+            "health": "/health",
+            "recommend": "/recommend?visitor_id=123&n=10",
+        }
+
+    @app.get("/api", include_in_schema=False)
+    def api_root():
         return {
             "service": "Retailrocket recommender",
             "variant": 16,
