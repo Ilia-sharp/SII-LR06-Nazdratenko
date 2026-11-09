@@ -12,6 +12,7 @@ venv/
 data/*
 !data/README.md
 !data/.gitkeep
+!data/check_cases.json
 
 # --- Обученная модель: артефакты для демо на Render коммитятся ---
 # (данные Retailrocket — нет, см. выше)

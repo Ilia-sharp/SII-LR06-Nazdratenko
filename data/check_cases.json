@@ -1,0 +1,409 @@
+{
+  "generated_at": "2026-11-09T07:54:38.415204+00:00",
+  "variant": 16,
+  "how_to_check": "POST /api/recommend с телом {\"visitor_id\": <id>, \"n\": 10, \"model\": \"auto\"}",
+  "cases": [
+    {
+      "visitor_id": 582525,
+      "why": "Пример с сайта: покупка из теста попала в Top-10.",
+      "expected_model": "covisitation",
+      "history_size": 2,
+      "context_items": [
+        179527,
+        351908
+      ],
+      "top10": [
+        {
+          "itemid": 6079,
+          "score": 6.0
+        },
+        {
+          "itemid": 251828,
+          "score": 6.0
+        },
+        {
+          "itemid": 253256,
+          "score": 6.0
+        },
+        {
+          "itemid": 66928,
+          "score": 5.0
+        },
+        {
+          "itemid": 3872,
+          "score": 4.0
+        },
+        {
+          "itemid": 423612,
+          "score": 4.0
+        },
+        {
+          "itemid": 449023,
+          "score": 4.0
+        },
+        {
+          "itemid": 147,
+          "score": 3.0
+        },
+        {
+          "itemid": 32843,
+          "score": 3.0
+        },
+        {
+          "itemid": 34355,
+          "score": 3.0
+        }
+      ],
+      "target_items": [
+        147,
+        250462,
+        349091
+      ],
+      "target_hit_rank": 8
+    },
+    {
+      "visitor_id": 795975,
+      "why": "Ещё один пользователь с попаданием покупки в Top-10.",
+      "expected_model": "covisitation",
+      "history_size": 4,
+      "context_items": [
+        214698,
+        408179
+      ],
+      "top10": [
+        {
+          "itemid": 168952,
+          "score": 4.0
+        },
+        {
+          "itemid": 46514,
+          "score": 3.0
+        },
+        {
+          "itemid": 69226,
+          "score": 3.0
+        },
+        {
+          "itemid": 195020,
+          "score": 3.0
+        },
+        {
+          "itemid": 236533,
+          "score": 3.0
+        },
+        {
+          "itemid": 61195,
+          "score": 2.0
+        },
+        {
+          "itemid": 79517,
+          "score": 2.0
+        },
+        {
+          "itemid": 280517,
+          "score": 2.0
+        },
+        {
+          "itemid": 414237,
+          "score": 2.0
+        },
+        {
+          "itemid": 16156,
+          "score": 1.0
+        }
+      ],
+      "target_items": [
+        236533
+      ],
+      "target_hit_rank": 5
+    },
+    {
+      "visitor_id": 1374225,
+      "why": "В истории один товар: co-visitation плюс популярностный fallback.",
+      "expected_model": "covisitation+popularity_fill",
+      "history_size": 1,
+      "context_items": [
+        126508
+      ],
+      "top10": [
+        {
+          "itemid": 461686,
+          "score": 2963.0
+        },
+        {
+          "itemid": 5411,
+          "score": 2169.0
+        },
+        {
+          "itemid": 187946,
+          "score": 2071.0
+        },
+        {
+          "itemid": 257040,
+          "score": 1911.0
+        },
+        {
+          "itemid": 309778,
+          "score": 1775.0
+        },
+        {
+          "itemid": 370653,
+          "score": 1656.0
+        },
+        {
+          "itemid": 7943,
+          "score": 1598.0
+        },
+        {
+          "itemid": 369447,
+          "score": 1491.0
+        },
+        {
+          "itemid": 298009,
+          "score": 1473.0
+        },
+        {
+          "itemid": 48030,
+          "score": 1464.0
+        }
+      ],
+      "target_items": [
+        461686
+      ],
+      "target_hit_rank": 1
+    },
+    {
+      "visitor_id": 5963,
+      "why": "Полный контекст из 5 последних товаров, чистая co-visitation.",
+      "expected_model": "covisitation",
+      "history_size": 5,
+      "context_items": [
+        148474,
+        328543,
+        201545,
+        369200,
+        253924
+      ],
+      "top10": [
+        {
+          "itemid": 6342,
+          "score": 7.0
+        },
+        {
+          "itemid": 252483,
+          "score": 7.0
+        },
+        {
+          "itemid": 4044,
+          "score": 6.0
+        },
+        {
+          "itemid": 275743,
+          "score": 6.0
+        },
+        {
+          "itemid": 15856,
+          "score": 5.0
+        },
+        {
+          "itemid": 67315,
+          "score": 5.0
+        },
+        {
+          "itemid": 153339,
+          "score": 5.0
+        },
+        {
+          "itemid": 319822,
+          "score": 5.0
+        },
+        {
+          "itemid": 109578,
+          "score": 4.0
+        },
+        {
+          "itemid": 290007,
+          "score": 4.0
+        }
+      ],
+      "target_items": [],
+      "target_hit_rank": null
+    },
+    {
+      "visitor_id": 55389,
+      "why": "Длинная история (149 товаров) — вся она исключена из выдачи.",
+      "expected_model": "covisitation",
+      "history_size": 149,
+      "context_items": [
+        122219,
+        314789,
+        85579,
+        271930
+      ],
+      "top10": [
+        {
+          "itemid": 225279,
+          "score": 30.0
+        },
+        {
+          "itemid": 281103,
+          "score": 30.0
+        },
+        {
+          "itemid": 291877,
+          "score": 17.0
+        },
+        {
+          "itemid": 430292,
+          "score": 17.0
+        },
+        {
+          "itemid": 127237,
+          "score": 16.0
+        },
+        {
+          "itemid": 431918,
+          "score": 16.0
+        },
+        {
+          "itemid": 42002,
+          "score": 13.0
+        },
+        {
+          "itemid": 185122,
+          "score": 11.0
+        },
+        {
+          "itemid": 37068,
+          "score": 8.0
+        },
+        {
+          "itemid": 387373,
+          "score": 8.0
+        }
+      ],
+      "target_items": [],
+      "target_hit_rank": null
+    },
+    {
+      "visitor_id": 50,
+      "why": "Один товар в истории, выдача добита популярными товарами.",
+      "expected_model": "covisitation+popularity_fill",
+      "history_size": 1,
+      "context_items": [
+        331168
+      ],
+      "top10": [
+        {
+          "itemid": 7804,
+          "score": 1.0
+        },
+        {
+          "itemid": 110943,
+          "score": 1.0
+        },
+        {
+          "itemid": 152154,
+          "score": 1.0
+        },
+        {
+          "itemid": 192653,
+          "score": 1.0
+        },
+        {
+          "itemid": 205706,
+          "score": 1.0
+        },
+        {
+          "itemid": 295653,
+          "score": 1.0
+        },
+        {
+          "itemid": 461686,
+          "score": 2963.0
+        },
+        {
+          "itemid": 5411,
+          "score": 2169.0
+        },
+        {
+          "itemid": 187946,
+          "score": 2071.0
+        },
+        {
+          "itemid": 257040,
+          "score": 1911.0
+        }
+      ],
+      "target_items": [],
+      "target_hit_rank": null
+    },
+    {
+      "visitor_id": 999999999,
+      "why": "Такого посетителя нет: cold start, выдаются самые популярные товары.",
+      "expected_model": "popularity_cold_start",
+      "history_size": 0,
+      "context_items": [],
+      "top10": [
+        {
+          "itemid": 461686,
+          "score": 2963.0
+        },
+        {
+          "itemid": 5411,
+          "score": 2169.0
+        },
+        {
+          "itemid": 187946,
+          "score": 2071.0
+        },
+        {
+          "itemid": 257040,
+          "score": 1911.0
+        },
+        {
+          "itemid": 309778,
+          "score": 1775.0
+        },
+        {
+          "itemid": 370653,
+          "score": 1656.0
+        },
+        {
+          "itemid": 7943,
+          "score": 1598.0
+        },
+        {
+          "itemid": 369447,
+          "score": 1491.0
+        },
+        {
+          "itemid": 298009,
+          "score": 1473.0
+        },
+        {
+          "itemid": 48030,
+          "score": 1464.0
+        }
+      ],
+      "target_items": [],
+      "target_hit_rank": null
+    }
+  ],
+  "metrics": {
+    "popularity": {
+      "precision@10": 0.000562,
+      "recall@10": 0.000268,
+      "ndcg@10": 0.001236,
+      "hit_rate@10": 0.005618,
+      "catalog_coverage": 11
+    },
+    "covisitation": {
+      "precision@10": 0.00618,
+      "recall@10": 0.021191,
+      "ndcg@10": 0.015219,
+      "hit_rate@10": 0.05618,
+      "catalog_coverage": 1353
+    }
+  }
+}
