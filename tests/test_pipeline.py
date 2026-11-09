@@ -54,7 +54,7 @@ def test_full_pipeline_and_api(tmp_path, small_events):
     root = client.get("/")
     assert root.status_code == 200
     assert "text/html" in root.headers["content-type"]
-    assert "Retailrocket Recommender" in root.text
+    assert "Подбор товаров для покупателя" in root.text
     assert client.get("/api/health").status_code == 200
     assert client.get("/api").json()["variant"] == 16
 
