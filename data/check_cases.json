@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-09T08:04:05.176069+00:00",
+  "generated_at": "2026-11-09T08:16:04.063376+00:00",
   "variant": 16,
   "how_to_check": "POST /api/recommend с телом {\"visitor_id\": <id>, \"n\": 10, \"model\": \"auto\"}",
   "cases": [
@@ -333,6 +333,112 @@
         {
           "itemid": 257040,
           "score": 1911.0
+        }
+      ],
+      "target_items": [],
+      "target_hit_rank": null
+    },
+    {
+      "visitor_id": 4348,
+      "why": "В последних событиях товар из корзины.",
+      "expected_model": "covisitation",
+      "history_size": 1,
+      "context_items": [
+        389814
+      ],
+      "top10": [
+        {
+          "itemid": 34843,
+          "score": 162.0
+        },
+        {
+          "itemid": 101050,
+          "score": 18.0
+        },
+        {
+          "itemid": 112657,
+          "score": 12.0
+        },
+        {
+          "itemid": 137697,
+          "score": 12.0
+        },
+        {
+          "itemid": 261673,
+          "score": 12.0
+        },
+        {
+          "itemid": 377133,
+          "score": 12.0
+        },
+        {
+          "itemid": 62275,
+          "score": 9.0
+        },
+        {
+          "itemid": 133549,
+          "score": 9.0
+        },
+        {
+          "itemid": 142558,
+          "score": 9.0
+        },
+        {
+          "itemid": 255614,
+          "score": 9.0
+        }
+      ],
+      "target_items": [],
+      "target_hit_rank": null
+    },
+    {
+      "visitor_id": 9235,
+      "why": "В последних событиях покупка.",
+      "expected_model": "covisitation",
+      "history_size": 1,
+      "context_items": [
+        62290
+      ],
+      "top10": [
+        {
+          "itemid": 154851,
+          "score": 15.0
+        },
+        {
+          "itemid": 64044,
+          "score": 10.0
+        },
+        {
+          "itemid": 420072,
+          "score": 10.0
+        },
+        {
+          "itemid": 18155,
+          "score": 5.0
+        },
+        {
+          "itemid": 40868,
+          "score": 5.0
+        },
+        {
+          "itemid": 48105,
+          "score": 5.0
+        },
+        {
+          "itemid": 48378,
+          "score": 5.0
+        },
+        {
+          "itemid": 51671,
+          "score": 5.0
+        },
+        {
+          "itemid": 54241,
+          "score": 5.0
+        },
+        {
+          "itemid": 59424,
+          "score": 5.0
         }
       ],
       "target_items": [],

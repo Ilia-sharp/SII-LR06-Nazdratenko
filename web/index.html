@@ -85,6 +85,22 @@
   .steps li { margin-bottom: 4px; }
   .steps li:last-child { margin-bottom: 0; }
 
+  .samples { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .samples h3 { margin: 0 0 4px; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .sample {
+    display: grid; grid-template-columns: 86px minmax(0, 1fr) auto; gap: 8px;
+    align-items: baseline; width: 100%; padding: 7px 0; border: 0;
+    border-bottom: 1px solid var(--line); background: none; text-align: left;
+    font-size: 12.5px; color: var(--text); cursor: pointer;
+  }
+  .sample:last-child { border-bottom: 0; }
+  .sample:hover .sample-id { color: var(--accent); }
+  .sample-id { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .sample-note { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+  .sample-copy { color: var(--muted); font-size: 11px; white-space: nowrap; }
+  .sample.copied .sample-copy { color: var(--green); }
+  .samples-hint { margin: 8px 0 0; color: var(--muted); font-size: 11.5px; line-height: 1.45; }
+
   .recs { flex: 1; }
   .rec { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
   .rec:last-child { border-bottom: 0; }
@@ -178,6 +194,38 @@
         <li>Сервис берёт последние 5 событий: что смотрел, клал в корзину, купил.</li>
         <li>Справа — Top-10 похожих товаров. Кнопка «Пример» заполнит форму сама.</li>
       </ol>
+
+      <div class="samples">
+        <h3>Покупатели для проверки</h3>
+        <div id="samples">
+          <button type="button" class="sample" data-id="582525">
+            <span class="sample-id">582525</span>
+            <span class="sample-note">просмотры</span>
+            <span class="sample-copy">копировать</span>
+          </button>
+          <button type="button" class="sample" data-id="4348">
+            <span class="sample-id">4348</span>
+            <span class="sample-note">товар в корзине</span>
+            <span class="sample-copy">копировать</span>
+          </button>
+          <button type="button" class="sample" data-id="9235">
+            <span class="sample-id">9235</span>
+            <span class="sample-note">покупка</span>
+            <span class="sample-copy">копировать</span>
+          </button>
+          <button type="button" class="sample" data-id="55389">
+            <span class="sample-id">55389</span>
+            <span class="sample-note">длинная история</span>
+            <span class="sample-copy">копировать</span>
+          </button>
+          <button type="button" class="sample" data-id="999999999">
+            <span class="sample-id">999999999</span>
+            <span class="sample-note">новый покупатель</span>
+            <span class="sample-copy">копировать</span>
+          </button>
+        </div>
+        <p class="samples-hint">Нажмите на ID — скопируем его и сразу покажем рекомендации.</p>
+      </div>
     </form>
 
     <section class="panel results">
@@ -240,6 +288,7 @@
   const contextBlock = $('contextBlock');
   const contextTitle = $('contextTitle');
   const eventsEl = $('events');
+  const samplesEl = $('samples');
   const submitEl = $('submit');
   let mode = 'visitor';
 
@@ -465,6 +514,41 @@
     $('visitor').value = '582525';
     $('n').value = '10';
     $('model').value = 'auto';
+    form.requestSubmit();
+  });
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (error) {
+      const input = $('visitor');
+      input.value = text;
+      input.select();
+      try {
+        document.execCommand('copy');
+      } catch (ignored) {
+        // Копирование недоступно — ID всё равно подставлен в поле.
+      }
+    }
+  }
+
+  samplesEl.addEventListener('click', async (event) => {
+    const button = event.target.closest('.sample');
+    if (!button) return;
+    const visitorId = button.dataset.id;
+
+    document.querySelectorAll('.sample').forEach((sample) => {
+      sample.classList.remove('copied');
+      sample.querySelector('.sample-copy').textContent = 'копировать';
+    });
+    button.classList.add('copied');
+    button.querySelector('.sample-copy').textContent = 'скопировано';
+
+    setMode('visitor');
+    $('visitor').value = visitorId;
+    $('n').value = '10';
+    $('model').value = 'auto';
+    await copyText(visitorId);
     form.requestSubmit();
   });
 
