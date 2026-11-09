@@ -70,6 +70,21 @@
   .status.error { color: var(--red); }
   .meta { margin: 2px 0 10px; color: var(--muted); font-size: 12px; min-height: 18px; }
 
+  .context { margin: 4px 0 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fcfcfd; }
+  .context h3 { margin: 0 0 8px; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .events { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  .events li { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; font-size: 12.5px; }
+  .ev-type { font-size: 11.5px; }
+  .ev-type.view { color: var(--muted); }
+  .ev-type.cart { color: #b45309; }
+  .ev-type.buy { color: var(--green); }
+  .ev-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ev-id { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+
+  .steps { margin: 14px 0 0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+  .steps li { margin-bottom: 4px; }
+  .steps li:last-child { margin-bottom: 0; }
+
   .recs { flex: 1; }
   .rec { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
   .rec:last-child { border-bottom: 0; }
@@ -157,7 +172,12 @@
         <button class="ghost" id="example" type="button">Пример</button>
       </div>
 
-      <p class="hint">Берём последние 5 событий покупателя. Уже просмотренное не советуем.</p>
+      <p class="hint" hidden>Берём последние 5 событий покупателя. Уже просмотренное не советуем.</p>
+      <ol class="steps">
+        <li>Введите ID покупателя и нажмите «Подобрать».</li>
+        <li>Сервис берёт последние 5 событий: что смотрел, клал в корзину, купил.</li>
+        <li>Справа — Top-10 похожих товаров. Кнопка «Пример» заполнит форму сама.</li>
+      </ol>
     </form>
 
     <section class="panel results">
@@ -166,6 +186,11 @@
         <span class="status" id="status"></span>
       </div>
       <p class="meta" id="meta"></p>
+
+      <div class="context" id="contextBlock" hidden>
+        <h3 id="contextTitle">Последние события покупателя</h3>
+        <ul class="events" id="events"></ul>
+      </div>
 
       <div class="recs" id="recs">
         <div class="empty">
@@ -212,6 +237,9 @@
   const statusEl = $('status');
   const recsEl = $('recs');
   const metaEl = $('meta');
+  const contextBlock = $('contextBlock');
+  const contextTitle = $('contextTitle');
+  const eventsEl = $('events');
   const submitEl = $('submit');
   let mode = 'visitor';
 
@@ -323,14 +351,45 @@
     return map[name] || name;
   }
 
+  function eventByWeight(weight, itemsMode) {
+    if (itemsMode) return { label: 'товар', cls: 'view' };
+    const value = Number(weight);
+    if (value >= 5) return { label: 'покупка', cls: 'buy' };
+    if (value >= 3) return { label: 'в корзину', cls: 'cart' };
+    return { label: 'просмотр', cls: 'view' };
+  }
+
+  function renderContext(context, weights, itemsMode) {
+    if (!context.length) {
+      contextBlock.hidden = true;
+      return;
+    }
+    contextTitle.textContent = itemsMode
+      ? 'Товары текущей сессии'
+      : 'Последние события покупателя';
+    eventsEl.innerHTML = context.map((itemid, index) => {
+      const product = productFor(itemid);
+      const event = eventByWeight(weights[index], itemsMode);
+      return `
+        <li>
+          <span class="ev-type ${event.cls}">${event.label}</span>
+          <span class="ev-name">${product.name}</span>
+          <span class="ev-id">${itemid}</span>
+        </li>`;
+    }).join('');
+    contextBlock.hidden = false;
+  }
+
   function render(data) {
     const recommendations = data.recommendations || [];
     const context = data.context_items || [];
+    const weights = data.context_weights || [];
     const historyCount = data.history_size || 0;
+    const itemsMode = mode === 'items';
 
-    const contextText = context.length ? ` · контекст: ${context.join(', ')}` : '';
     metaEl.textContent =
-      `${humanModel(data.model)} · история: ${historyCount} ${plural(historyCount, 'товар', 'товара', 'товаров')}${contextText}`;
+      `${humanModel(data.model)} · история: ${historyCount} ${plural(historyCount, 'товар', 'товара', 'товаров')}`;
+    renderContext(context, weights, itemsMode);
 
     if (!recommendations.length) {
       recsEl.innerHTML = `
@@ -389,6 +448,7 @@
     } catch (error) {
       setStatus('Ошибка', 'error');
       metaEl.textContent = '';
+      contextBlock.hidden = true;
       recsEl.innerHTML = `
         <div class="empty">
           <strong>Не получилось</strong>
