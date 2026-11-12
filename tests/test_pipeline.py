@@ -39,6 +39,10 @@ def test_full_pipeline_and_api(tmp_path, small_events):
     assert (artifacts / "metadata.json").exists()
     assert metadata["evaluation"]["evaluated_visitors"] == 1
     assert metadata["example"]["visitor_id"] == 15
+    # Сравниваются три модели: baseline, co-visitation и гибрид с популярностью.
+    assert "hybrid" in metadata["evaluation"]
+    assert "covisitation_by_context_length" in metadata["evaluation"]
+    assert metadata["timings_seconds"]["total"] >= 0
 
     bundle = load_bundle(artifacts)
     assert bundle.test_visitors.tolist() == [15]

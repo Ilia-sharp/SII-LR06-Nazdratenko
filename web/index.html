@@ -478,7 +478,8 @@
     const rows = [
       ['Популярные товары', evaluation.popularity],
       ['Похожие по покупкам', evaluation.covisitation],
-    ];
+      ['Похожие + популярные', evaluation.hybrid],
+    ].filter(([, row]) => row);
     $('metricsBody').innerHTML = rows.map(([name, row]) => `
       <tr>
         <td>${name}</td>

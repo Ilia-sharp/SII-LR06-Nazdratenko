@@ -132,6 +132,7 @@ def dump_json(cases: List[Dict[str, Any]], bundle) -> None:
         "metrics": {
             "popularity": evaluation.get("popularity"),
             "covisitation": evaluation.get("covisitation"),
+            "hybrid": evaluation.get("hybrid"),
         },
     }
     CASES_PATH.parent.mkdir(parents=True, exist_ok=True)

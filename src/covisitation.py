@@ -2,8 +2,10 @@
 
 На train для каждой сессии берутся уникальные товары в хронологическом
 порядке; все пары внутри сессии увеличивают совместную частоту на 1.
-Матрица хранится в симметричном CSR-виде: для каждого товара — соседи и
-их совместные частоты.
+Пара кодируется в неупорядоченном виде ``(min, max)``, поэтому одна и та же
+связь, встретившаяся в сессиях с разным порядком товаров, учитывается ровно
+один раз. Матрица хранится в симметричном CSR-виде: для каждого товара —
+соседи и их совместные частоты; дублей «сосед → сосед» в строке нет.
 """
 
 from __future__ import annotations
@@ -75,6 +77,59 @@ class CovisitationModel:
         return [(itemid, float(score)) for itemid, score in ranked[:n]]
 
 
+def _pair_positions(
+    starts: np.ndarray,
+    ends: np.ndarray,
+    max_session_items: int,
+) -> tuple[np.ndarray, np.ndarray, int]:
+    """Все пары позиций ``(i < j)`` внутри сессий — без Python-циклов.
+
+    Сессии длиннее ``max_session_items`` обрезаются до последних товаров
+    (защита от квадратичного роста числа пар).
+
+    Возвращает позиции левого и правого элемента пары в плоском массиве
+    уникальных товаров сессий и общее количество пар.
+    """
+    sizes = ends - starts
+    limit = max(1, int(max_session_items))
+    # Обрезанная сессия начинается с конца: остаются последние `limit` товаров.
+    eff_size = np.minimum(sizes, limit)
+    eff_start = np.where(sizes > limit, ends - limit, starts)
+
+    counts = eff_size * (eff_size - 1) // 2
+    total = int(counts.sum())
+    if total == 0:
+        empty = np.empty(0, dtype=np.int64)
+        return empty, empty, 0
+
+    session_of_pair = np.repeat(np.arange(len(counts), dtype=np.int64), counts)
+    pair_offsets = np.concatenate(
+        [np.zeros(1, dtype=np.int64), np.cumsum(counts, dtype=np.int64)[:-1]]
+    )
+    local = np.arange(total, dtype=np.int64) - pair_offsets[session_of_pair]
+
+    # Таблица соответствий «номер пары внутри сессии → (i, j)» для каждого
+    # размера сессии. Для размера s пар C(s, 2) — всего до 20 тысяч записей.
+    max_size = int(eff_size.max())
+    table_i: list[np.ndarray] = []
+    table_j: list[np.ndarray] = []
+    table_offset = np.zeros(max_size + 1, dtype=np.int64)
+    position = 0
+    for size in range(2, max_size + 1):
+        rows, cols = np.triu_indices(size, k=1)
+        table_i.append(rows.astype(np.int64))
+        table_j.append(cols.astype(np.int64))
+        table_offset[size] = position
+        position += len(rows)
+
+    lookup = table_offset[eff_size[session_of_pair]] + local
+    all_i = np.concatenate(table_i)
+    all_j = np.concatenate(table_j)
+    left = eff_start[session_of_pair] + all_i[lookup]
+    right = eff_start[session_of_pair] + all_j[lookup]
+    return left, right, total
+
+
 def build_covisitation(
     train_sessions: pd.DataFrame,
     max_session_items: int = 50,
@@ -95,13 +150,17 @@ def build_covisitation(
         {
             "session_id": train_sessions["session_id"].to_numpy(dtype=np.int64),
             "item_idx": item_index.astype(np.int64),
-            "timestamp": train_sessions["timestamp"].to_numpy(),
+            # Метка времени как int64 (наносекунды): сортировка по нему в
+            # десятки раз быстрее, чем по объектам Timestamp.
+            "ts": train_sessions["timestamp"]
+            .to_numpy(dtype="datetime64[ns]")
+            .astype(np.int64),
         }
     )
     # Уникальные товары сессии; keep="last" оставляет самое свежее появление.
     unique = (
         frame.sort_values(
-            ["session_id", "timestamp", "item_idx"], kind="mergesort"
+            ["session_id", "ts", "item_idx"], kind="mergesort"
         )
         .drop_duplicates(["session_id", "item_idx"], keep="last")
         .reset_index(drop=True)
@@ -115,37 +174,30 @@ def build_covisitation(
     ends = np.r_[starts[1:], len(session_ids)]
     sizes = ends - starts
 
-    keys_parts: list[np.ndarray] = []
+    left_pos, right_pos, pair_occurrences = _pair_positions(
+        starts, ends, max_session_items
+    )
 
-    # Большинство сессий содержат ровно два уникальных товара — это быстрый путь.
-    pair_starts = starts[sizes == 2]
-    if len(pair_starts):
-        left = item_idx[pair_starts]
-        right = item_idx[pair_starts + 1]
-        keys_parts.append(left * n_items + right)
-
-    # Длинные сессии: все сочетания, но не более max_session_items последних.
-    long_mask = sizes > 2
-    for start, end in zip(starts[long_mask], ends[long_mask]):
-        part = item_idx[start:end]
-        if len(part) > max_session_items:
-            part = part[-max_session_items:]
-        for i in range(len(part) - 1):
-            left = int(part[i])
-            rest = part[i + 1 :]
-            keys_parts.append(left * n_items + rest)
-
-    if keys_parts:
-        all_keys = np.concatenate(keys_parts).astype(np.int64, copy=False)
+    if pair_occurrences:
+        left = item_idx[left_pos]
+        right = item_idx[right_pos]
+        # Неупорядоченная пара: (min, max). Так связь, увиденная в сессиях с
+        # разным порядком товаров, попадает в счётчик ровно один раз.
+        low = np.minimum(left, right)
+        high = np.maximum(left, right)
+        # Ключ в int64: n_items^2 должно помещаться (n_items < 3 млрд).
+        keys = low * np.int64(n_items) + high
+        unique_keys, counts = np.unique(keys, return_counts=True)
+        pair_low = (unique_keys // np.int64(n_items)).astype(np.int64)
+        pair_high = (unique_keys % np.int64(n_items)).astype(np.int64)
     else:
-        all_keys = np.empty(0, dtype=np.int64)
+        pair_low = np.empty(0, dtype=np.int64)
+        pair_high = np.empty(0, dtype=np.int64)
+        counts = np.empty(0, dtype=np.int64)
 
-    unique_keys, counts = np.unique(all_keys, return_counts=True)
-    left = (unique_keys // n_items).astype(np.int64)
-    right = (unique_keys % n_items).astype(np.int64)
-
-    src = np.concatenate([left, right])
-    dst = np.concatenate([right, left])
+    # Симметричная матрица: каждая неупорядоченная пара даёт две дуги.
+    src = np.concatenate([pair_low, pair_high])
+    dst = np.concatenate([pair_high, pair_low])
     weight = np.concatenate([counts, counts]).astype(np.float32)
 
     order = np.lexsort((dst, -weight, src))
@@ -159,8 +211,8 @@ def build_covisitation(
 
     stats = {
         "vocabulary_items": n_items,
-        "pair_occurrences": int(len(all_keys)),
-        "unique_pairs": int(len(unique_keys)),
+        "pair_occurrences": int(pair_occurrences),
+        "unique_pairs": int(len(unique_keys)) if pair_occurrences else 0,
         "mean_neighbors_per_item": round(
             float(len(dst) / n_items) if n_items else 0.0, 2
         ),

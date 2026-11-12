@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-09T08:30:38.144929+00:00",
+  "generated_at": "2026-11-12T19:56:07.680054+00:00",
   "variant": 16,
   "how_to_check": "POST /api/recommend с телом {\"visitor_id\": <id>, \"n\": 10, \"model\": \"auto\"}",
   "cases": [
@@ -855,6 +855,13 @@
       "ndcg@10": 0.015219,
       "hit_rate@10": 0.05618,
       "catalog_coverage": 1353
+    },
+    "hybrid": {
+      "precision@10": 0.00618,
+      "recall@10": 0.021191,
+      "ndcg@10": 0.015219,
+      "hit_rate@10": 0.05618,
+      "catalog_coverage": 1360
     }
   }
 }

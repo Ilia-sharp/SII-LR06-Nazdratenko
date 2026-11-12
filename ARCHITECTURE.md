@@ -31,7 +31,7 @@ flowchart LR
 | `src/data.py` | Загрузка CSV, проверки схемы, очистка, целевые наборы test |
 | `src/split.py` | Временное разделение, назначение `session_id` |
 | `src/popularity.py` | Взвешенный популярностный baseline |
-| `src/covisitation.py` | Симметричная co-visitation матрица в CSR-виде |
+| `src/covisitation.py` | Симметричная co-visitation матрица в CSR-виде (неупорядоченные пары) |
 | `src/profiles.py` | CSR-профили: полная история и контекст последних событий |
 | `src/recommend.py` | Top-N, фильтрация истории, fallback популярностью |
 | `src/metrics.py` | Precision@k, Recall@k, бинарная NDCG@k |
@@ -52,9 +52,11 @@ flowchart LR
 * `test_visitors`, `test_indptr`, `test_items` — цели для повторной оценки.
 
 `artifacts/metadata.json` — параметры, статистика данных, split, сессии,
-метрики, пример выдачи. Датасет (`data/events.csv`) в репозиторий не входит,
-а готовые артефакты модели закоммичены, чтобы API на Render работало сразу
-после деплоя. Их можно пересобрать командой `train`.
+метрики (включая гибрид `co-visitation + popularity fill` и разбивку по
+длине контекста), тайминги этапов (`timings_seconds`), пример выдачи.
+Датасет (`data/events.csv`) в репозиторий не входит, а готовые артефакты
+модели закоммичены, чтобы API на Render работало сразу после деплоя. Их
+можно пересобрать командой `train`.
 
 ## Почему оценка не течёт
 

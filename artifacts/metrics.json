@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T05:54:02.878724+00:00",
+  "generated_at": "2026-11-12T19:56:02.097263+00:00",
   "lab": "Рекомендательные ИИ-системы",
   "variant": {
     "number": 16,
@@ -137,8 +137,8 @@
   "covisitation": {
     "vocabulary_items": 215683,
     "pair_occurrences": 2004561,
-    "unique_pairs": 1724569,
-    "mean_neighbors_per_item": 15.99,
+    "unique_pairs": 1624571,
+    "mean_neighbors_per_item": 15.06,
     "max_session_items": 50,
     "sessions_with_pairs": 217996
   },
@@ -185,6 +185,51 @@
       "hit_rate@10": 0.05618,
       "catalog_coverage": 1353
     },
+    "hybrid": {
+      "precision@10": 0.00618,
+      "recall@10": 0.021191,
+      "ndcg@10": 0.015219,
+      "hit_rate@10": 0.05618,
+      "catalog_coverage": 1360
+    },
+    "hybrid_filled_users": 29,
+    "covisitation_by_context_length": [
+      {
+        "context_length": 1,
+        "visitors": 100,
+        "precision@10": 0.004,
+        "recall@10": 0.023333,
+        "ndcg@10": 0.012584
+      },
+      {
+        "context_length": 2,
+        "visitors": 36,
+        "precision@10": 0.008333,
+        "recall@10": 0.032407,
+        "ndcg@10": 0.026594
+      },
+      {
+        "context_length": 3,
+        "visitors": 26,
+        "precision@10": 0.007692,
+        "recall@10": 0.008304,
+        "ndcg@10": 0.00686
+      },
+      {
+        "context_length": 4,
+        "visitors": 11,
+        "precision@10": 0.0,
+        "recall@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "context_length": 5,
+        "visitors": 5,
+        "precision@10": 0.04,
+        "recall@10": 0.011233,
+        "ndcg@10": 0.062976
+      }
+    ],
     "new_targets": {
       "target_pairs": 209,
       "all_target_pairs": 393,
@@ -202,7 +247,14 @@
         "recall@10": 0.124636,
         "ndcg@10": 0.078371,
         "hit_rate@10": 0.232558,
-        "catalog_coverage": 1353
+        "catalog_coverage": 351
+      },
+      "hybrid": {
+        "precision@10": 0.025581,
+        "recall@10": 0.124636,
+        "ndcg@10": 0.078371,
+        "hit_rate@10": 0.232558,
+        "catalog_coverage": 359
       }
     }
   },
@@ -327,5 +379,16 @@
       }
     ],
     "explanation": "Кандидаты — соседи последних товаров пользователя по сессиям train; score агрегирует совместные частоты с весами событий. Из выдачи удалены все товары, которые уже были в истории."
+  },
+  "timings_seconds": {
+    "load": 3.966,
+    "split": 0.157,
+    "sessions": 1.371,
+    "popularity": 0.516,
+    "covisitation": 2.108,
+    "profiles": 5.102,
+    "evaluation": 0.066,
+    "save": 4.857,
+    "total": 18.34
   }
 }

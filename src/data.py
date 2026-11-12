@@ -67,7 +67,12 @@ def load_events(path: str | Path) -> EventsData:
     df["visitorid"] = pd.to_numeric(df["visitorid"], errors="coerce")
     df["itemid"] = pd.to_numeric(df["itemid"], errors="coerce")
     df["timestamp"] = pd.to_numeric(df["timestamp"], errors="coerce")
-    df["event"] = df["event"].astype(str).str.strip().str.lower()
+    # Нормализация регистра и пробелов нужна редко: если значения уже
+    # известны, дорогой проход по 2,7 млн строк пропускается.
+    if raw["event"].isin(EVENT_WEIGHTS).all():
+        df["event"] = raw["event"].astype("str")
+    else:
+        df["event"] = df["event"].astype(str).str.strip().str.lower()
 
     invalid_rows = int(
         df[["visitorid", "itemid", "timestamp"]].isna().any(axis=1).sum()
@@ -99,7 +104,8 @@ def load_events(path: str | Path) -> EventsData:
     span_days = (ts_max - ts_min).total_seconds() / 86400.0
 
     report = {
-        "source": str(path),
+        # Путь в POSIX-виде: артефакты одинаковы на любой ОС.
+        "source": path.as_posix(),
         "rows_raw": n_raw,
         "rows_clean": int(len(df)),
         "missing_values_raw": missing_before,

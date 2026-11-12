@@ -58,6 +58,16 @@ def test_targets_dict(bundle: ModelBundle) -> Dict[int, np.ndarray]:
     return result
 
 
+def write_metadata(directory: str | Path, metadata: Dict[str, Any]) -> Path:
+    """Перезаписывает metadata.json (и metrics.json) в каталоге артефактов."""
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    for name in (METADATA_FILE, "metrics.json"):
+        with (directory / name).open("w", encoding="utf-8") as fh:
+            json.dump(metadata, fh, ensure_ascii=False, indent=2)
+    return directory
+
+
 def save_bundle(
     directory: str | Path,
     *,
@@ -165,10 +175,13 @@ def recommend_for_visitor(
         )
         model_name = "covisitation"
         if fallback and model == "auto" and len(recommendations) < n:
-            recommendations = merge_with_popularity(
+            filled = merge_with_popularity(
                 recommendations, bundle.popularity, history, n
             )
-            if recommendations:
+            # Название меняется только если популярность реально добавила
+            # товары, иначе выдача осталась чисто co-visitation.
+            if len(filled) > len(recommendations):
+                recommendations = filled
                 model_name = "covisitation+popularity_fill"
 
     return {
@@ -204,10 +217,12 @@ def recommend_for_items(
     )
     model_name = "covisitation"
     if fallback and len(recommendations) < n:
-        recommendations = merge_with_popularity(
+        filled = merge_with_popularity(
             recommendations, bundle.popularity, history, n
         )
-        model_name = "covisitation+popularity_fill"
+        if len(filled) > len(recommendations):
+            recommendations = filled
+            model_name = "covisitation+popularity_fill"
 
     return {
         "input_items": items,

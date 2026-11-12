@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict
 
+import numpy as np
 import pandas as pd
 
 
@@ -14,6 +15,29 @@ class TimeSplit:
     test: pd.DataFrame
     cutoff: pd.Timestamp
     report: Dict[str, Any]
+
+
+def _assert_disjoint_timestamps(
+    train: pd.DataFrame,
+    test: pd.DataFrame,
+) -> None:
+    """Проверяет, что метки времени train и test не пересекаются.
+
+    Обе части отсортированы по времени (события сортируются при загрузке),
+    поэтому достаточно сравнения границ. Если данные пришли
+    неотсортированными, включается векторная проверка пересечения.
+    """
+    train_sorted = train["timestamp"].is_monotonic_increasing
+    test_sorted = test["timestamp"].is_monotonic_increasing
+    if train_sorted and test_sorted:
+        if train["timestamp"].max() >= test["timestamp"].min():
+            raise AssertionError("Найдены общие метки времени в train и test")
+        return
+
+    train_ns = train["timestamp"].to_numpy(dtype="datetime64[ns]").astype("int64")
+    test_ns = test["timestamp"].to_numpy(dtype="datetime64[ns]").astype("int64")
+    if np.intersect1d(train_ns, test_ns, assume_unique=False).size:
+        raise AssertionError("Найдены общие метки времени в train и test")
 
 
 def time_split(
@@ -38,12 +62,10 @@ def time_split(
     if train.empty or test.empty:
         raise ValueError("После временного разделения одна из частей пуста.")
 
-    overlap = set(train["timestamp"]).intersection(set(test["timestamp"]))
-    if overlap:
-        raise AssertionError("Найдены общие метки времени в train и test")
-
     if train["timestamp"].max() >= test["timestamp"].min():
         raise AssertionError("Граница train/test нарушена")
+
+    _assert_disjoint_timestamps(train, test)
 
     report = {
         "cutoff": cutoff.isoformat(),
